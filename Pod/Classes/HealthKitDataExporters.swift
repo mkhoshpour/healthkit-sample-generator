@@ -11,13 +11,13 @@ import HealthKit
 /// Protocol that every data export must conform to.
 internal protocol DataExporter {
     var message: String {get}
-    func export(healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws -> Void
+    func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws -> Void
 }
 
 /// convenience base class for dataexporter
 internal class BaseDataExporter {
     var healthQueryError: NSError?  = nil
-    var exportError: ErrorType?     = nil
+    var exportError: Error?     = nil
     var exportConfiguration: ExportConfiguration
     let sortDescriptor              = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)
     
@@ -30,7 +30,7 @@ internal class BaseDataExporter {
         // throw collected errors in the completion block
         if healthQueryError != nil {
             print(healthQueryError)
-            throw ExportError.DataWriteError(healthQueryError?.description)
+            throw ExportError.dataWriteError(healthQueryError?.description)
         }
         if let throwableError = exportError {
             throw throwableError
@@ -43,9 +43,9 @@ internal class MetaDataExporter : BaseDataExporter, DataExporter {
     
     internal var message = "exporting metadata"
     
-    internal func export(healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
+    internal func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
         for exportTarget in exportTargets {
-            try exportTarget.writeMetaData(creationDate: NSDate(), profileName: exportConfiguration.profileName, version:"1.0.0")
+            try exportTarget.writeMetaData(creationDate: Date(), profileName: exportConfiguration.profileName, version:"1.0.0")
         }
     }
 }
@@ -55,23 +55,23 @@ internal class UserDataExporter: BaseDataExporter, DataExporter {
     
     internal var message = "exporting user data"
     
-    internal func export(healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
+    internal func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
         var userData = Dictionary<String, AnyObject>()
         
         if let birthDay = try? healthStore.dateOfBirth() {
-            userData[HealthKitConstants.DATE_OF_BIRTH] = birthDay
+            userData[HealthKitConstants.DATE_OF_BIRTH] = birthDay as AnyObject
         }
         
-        if let sex = try? healthStore.biologicalSex() where sex.biologicalSex != HKBiologicalSex.NotSet {
-            userData[HealthKitConstants.BIOLOGICAL_SEX] = sex.biologicalSex.rawValue
+        if let sex = try? healthStore.biologicalSex(), sex.biologicalSex != HKBiologicalSex.notSet {
+            userData[HealthKitConstants.BIOLOGICAL_SEX] = sex.biologicalSex.rawValue as AnyObject
         }
         
-        if let bloodType = try? healthStore.bloodType() where bloodType.bloodType != HKBloodType.NotSet {
-            userData[HealthKitConstants.BLOOD_TYPE] = bloodType.bloodType.rawValue
+        if let bloodType = try? healthStore.bloodType(), bloodType.bloodType != HKBloodType.notSet {
+            userData[HealthKitConstants.BLOOD_TYPE] = bloodType.bloodType.rawValue as AnyObject
         }
         
-        if let fitzpatrick = try? healthStore.fitzpatrickSkinType() where fitzpatrick.skinType != HKFitzpatrickSkinType.NotSet {
-            userData[HealthKitConstants.FITZPATRICK_SKIN_TYPE] = fitzpatrick.skinType.rawValue
+        if let fitzpatrick = try? healthStore.fitzpatrickSkinType(), fitzpatrick.skinType != HKFitzpatrickSkinType.notSet {
+            userData[HealthKitConstants.FITZPATRICK_SKIN_TYPE] = fitzpatrick.skinType.rawValue as AnyObject
         }
         
         for exportTarget in exportTargets {
@@ -96,26 +96,26 @@ internal class QuantityTypeDataExporter: BaseDataExporter, DataExporter {
         super.init(exportConfiguration: exportConfiguration)
     }
     
-    func writeResults(results: [HKSample]?, exportTargets: [ExportTarget], error: NSError?) -> Void {
+    func writeResults(_ results: [HKSample]?, exportTargets: [ExportTarget], error: NSError?) -> Void {
         if error != nil {
             self.healthQueryError = error
         } else {
             do {
                 for sample in results as! [HKQuantitySample] {
                     
-                    let value = sample.quantity.doubleValueForUnit(self.unit)
+                    let value = sample.quantity.doubleValue(for: self.unit)
                     
                     for exportTarget in exportTargets {
                         var dict: Dictionary<String, AnyObject> = [:]
                         if exportConfiguration.exportUuids {
-                            dict[HealthKitConstants.UUID] = sample.UUID.UUIDString
+                            dict[HealthKitConstants.UUID] = sample.uuid.uuidString as AnyObject
                         }
-                        dict[HealthKitConstants.S_DATE] = sample.startDate
-                        dict[HealthKitConstants.VALUE] = value
-                        dict[HealthKitConstants.UNIT] = unit.description
+                        dict[HealthKitConstants.S_DATE] = sample.startDate as AnyObject
+                        dict[HealthKitConstants.VALUE] = value as AnyObject
+                        dict[HealthKitConstants.UNIT] = unit.description as AnyObject
                         
                         if sample.startDate != sample.endDate {
-                            dict[HealthKitConstants.E_DATE] = sample.endDate
+                            dict[HealthKitConstants.E_DATE] = sample.endDate as AnyObject
                         }
                         try exportTarget.writeDictionary(dict);
                     }
@@ -126,9 +126,9 @@ internal class QuantityTypeDataExporter: BaseDataExporter, DataExporter {
         }
     }
     
-    func anchorQuery(healthStore: HKHealthStore, exportTargets: [ExportTarget], anchor : HKQueryAnchor?) throws -> (anchor:HKQueryAnchor?, count:Int?) {
+    func anchorQuery(_ healthStore: HKHealthStore, exportTargets: [ExportTarget], anchor : HKQueryAnchor?) throws -> (anchor:HKQueryAnchor?, count:Int?) {
         
-        let semaphore = dispatch_semaphore_create(0)
+        let semaphore = DispatchSemaphore(value: 0)
         var resultAnchor: HKQueryAnchor?
         var resultCount: Int?
         let query = HKAnchoredObjectQuery(
@@ -137,16 +137,16 @@ internal class QuantityTypeDataExporter: BaseDataExporter, DataExporter {
             anchor: anchor ,
             limit: queryCountLimit) { (query, results, deleted, newAnchor, error) -> Void in
 
-                self.writeResults(results, exportTargets: exportTargets, error: error)
+                self.writeResults(results, exportTargets: exportTargets, error: error as! NSError)
          
                 resultAnchor = newAnchor
                 resultCount = results?.count
-                dispatch_semaphore_signal(semaphore)
+                semaphore.signal()
             }
         
-        healthStore.executeQuery(query)
+        healthStore.execute(query)
         
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+        semaphore.wait(timeout: DispatchTime.distantFuture)
         
         try rethrowCollectedErrors()
         
@@ -154,7 +154,7 @@ internal class QuantityTypeDataExporter: BaseDataExporter, DataExporter {
     }
     
     
-    internal func export(healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
+    internal func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
         for exportTarget in exportTargets {
             try exportTarget.startWriteType(type)
         }
@@ -183,7 +183,7 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
         super.init(exportConfiguration: exportConfiguration)
     }
     
-    func writeResults(results: [HKCategorySample], exportTargets: [ExportTarget], error: NSError?) -> Void {
+    func writeResults(_ results: [HKCategorySample], exportTargets: [ExportTarget], error: NSError?) -> Void {
         if error != nil {
             self.healthQueryError = error
         } else {
@@ -193,12 +193,12 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
                     for exportTarget in exportTargets {
                         var dict: Dictionary<String, AnyObject> = [:]
                         if exportConfiguration.exportUuids {
-                            dict[HealthKitConstants.UUID] = sample.UUID.UUIDString
+                            dict[HealthKitConstants.UUID] = sample.uuid.uuidString as AnyObject
                         }
-                        dict[HealthKitConstants.S_DATE] = sample.startDate
-                        dict[HealthKitConstants.VALUE] = sample.value
+                        dict[HealthKitConstants.S_DATE] = sample.startDate as AnyObject
+                        dict[HealthKitConstants.VALUE] = sample.value as AnyObject
                         if sample.startDate != sample.endDate {
-                            dict[HealthKitConstants.E_DATE] = sample.endDate
+                            dict[HealthKitConstants.E_DATE] = sample.endDate as AnyObject
                         }
                         try exportTarget.writeDictionary(dict);
                     }
@@ -209,9 +209,9 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
         }
     }
     
-    func anchorQuery(healthStore: HKHealthStore, exportTargets: [ExportTarget], anchor : HKQueryAnchor?) throws -> (anchor:HKQueryAnchor?, count:Int?) {
+    func anchorQuery(_ healthStore: HKHealthStore, exportTargets: [ExportTarget], anchor : HKQueryAnchor?) throws -> (anchor:HKQueryAnchor?, count:Int?) {
         
-        let semaphore = dispatch_semaphore_create(0)
+        let semaphore = DispatchSemaphore(value: 0)
         var resultAnchor: HKQueryAnchor?
         var resultCount: Int?
         let query = HKAnchoredObjectQuery(
@@ -220,16 +220,16 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
             anchor: anchor ,
             limit: queryCountLimit) { (query, results, deleted, newAnchor, error) -> Void in
                 
-                self.writeResults(results as! [HKCategorySample], exportTargets: exportTargets, error: error)
+                self.writeResults(results as! [HKCategorySample], exportTargets: exportTargets, error: error as! NSError)
 
                 resultAnchor = newAnchor
                 resultCount = results?.count
-                dispatch_semaphore_signal(semaphore)
+                semaphore.signal()
             }
         
-        healthStore.executeQuery(query)
+        healthStore.execute(query)
         
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+        semaphore.wait(timeout: DispatchTime.distantFuture)
         
         try rethrowCollectedErrors()
 
@@ -237,7 +237,7 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
     }
     
     
-    internal func export(healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
+    internal func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
         for exportTarget in exportTargets {
             try exportTarget.startWriteType(type)
         }
@@ -267,7 +267,7 @@ internal class CorrelationTypeDataExporter: BaseDataExporter, DataExporter {
         super.init(exportConfiguration: exportConfiguration)
     }
     
-    func writeResults(results: [HKCorrelation], exportTargets: [ExportTarget], error: NSError?) -> Void {
+    func writeResults(_ results: [HKCorrelation], exportTargets: [ExportTarget], error: NSError?) -> Void {
         if error != nil {
             self.healthQueryError = error
         } else {
@@ -276,11 +276,11 @@ internal class CorrelationTypeDataExporter: BaseDataExporter, DataExporter {
                     
                     var dict: Dictionary<String, AnyObject> = [:]
                     if exportConfiguration.exportUuids {
-                        dict[HealthKitConstants.UUID] = sample.UUID.UUIDString
+                        dict[HealthKitConstants.UUID] = sample.uuid.uuidString as AnyObject
                     }
-                    dict[HealthKitConstants.S_DATE] = sample.startDate
+                    dict[HealthKitConstants.S_DATE] = sample.startDate as AnyObject
                     if sample.startDate != sample.endDate {
-                        dict[HealthKitConstants.E_DATE] = sample.endDate
+                        dict[HealthKitConstants.E_DATE] = sample.endDate as AnyObject
                     }
                     var subSampleArray:[AnyObject] = []
                     
@@ -289,30 +289,30 @@ internal class CorrelationTypeDataExporter: BaseDataExporter, DataExporter {
                         
                         var sampleDict: Dictionary<String, AnyObject> = [:]
                         if exportConfiguration.exportUuids {
-                            sampleDict[HealthKitConstants.UUID] = subsample.UUID.UUIDString
+                            sampleDict[HealthKitConstants.UUID] = subsample.uuid.uuidString as AnyObject
                         }
 
-                        sampleDict[HealthKitConstants.S_DATE] = subsample.startDate
+                        sampleDict[HealthKitConstants.S_DATE] = subsample.startDate as AnyObject
                         if subsample.startDate != subsample.endDate {
-                            sampleDict[HealthKitConstants.E_DATE] = subsample.endDate
+                            sampleDict[HealthKitConstants.E_DATE] = subsample.endDate as AnyObject
                         }
-                        sampleDict[HealthKitConstants.TYPE] = subsample.sampleType.identifier
+                        sampleDict[HealthKitConstants.TYPE] = subsample.sampleType.identifier as AnyObject
                         
                         if let quantitySample = subsample as? HKQuantitySample {
                             let unit = self.typeMap[quantitySample.quantityType]!
-                            sampleDict[HealthKitConstants.UNIT] = unit.description
-                            sampleDict[HealthKitConstants.VALUE] = quantitySample.quantity.doubleValueForUnit(unit)
+                            sampleDict[HealthKitConstants.UNIT] = unit.description as AnyObject
+                            sampleDict[HealthKitConstants.VALUE] = quantitySample.quantity.doubleValue(for: unit) as AnyObject
                             
                         } else if let categorySample = subsample as? HKCategorySample {
-                            sampleDict[HealthKitConstants.VALUE] = categorySample.value
+                            sampleDict[HealthKitConstants.VALUE] = categorySample.value as AnyObject
                         } else {
-                            throw ExportError.IllegalArgumentError("unsupported correlation type \(subsample.sampleType.identifier)")
+                            throw ExportError.illegalArgumentError("unsupported correlation type \(subsample.sampleType.identifier)")
                         }
                         
-                        subSampleArray.append(sampleDict)
+                        subSampleArray.append(sampleDict as AnyObject)
                     }
                     
-                    dict[HealthKitConstants.OBJECTS] = subSampleArray
+                    dict[HealthKitConstants.OBJECTS] = subSampleArray as AnyObject
                     
                     for exportTarget in exportTargets {
                         try exportTarget.writeDictionary(dict);
@@ -325,9 +325,9 @@ internal class CorrelationTypeDataExporter: BaseDataExporter, DataExporter {
         }
     }
     
-    func anchorQuery(healthStore: HKHealthStore, exportTargets: [ExportTarget], anchor : HKQueryAnchor?) throws -> (anchor:HKQueryAnchor?, count:Int?) {
+    func anchorQuery(_ healthStore: HKHealthStore, exportTargets: [ExportTarget], anchor : HKQueryAnchor?) throws -> (anchor:HKQueryAnchor?, count:Int?) {
         
-        let semaphore = dispatch_semaphore_create(0)
+        let semaphore = DispatchSemaphore(value: 0)
         var resultAnchor: HKQueryAnchor?
         var resultCount: Int?
         let query = HKAnchoredObjectQuery(
@@ -337,23 +337,23 @@ internal class CorrelationTypeDataExporter: BaseDataExporter, DataExporter {
             limit: queryCountLimit) {
                 (query, results, deleted, newAnchor, error) -> Void in
                 
-                self.writeResults(results as! [HKCorrelation], exportTargets: exportTargets, error: error)
+                self.writeResults(results as! [HKCorrelation], exportTargets: exportTargets, error: error as! NSError)
                 resultAnchor = newAnchor
                 resultCount = results?.count
-                dispatch_semaphore_signal(semaphore)
+                semaphore.signal()
                 
         }
         
-        healthStore.executeQuery(query)
+        healthStore.execute(query)
         
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+        semaphore.wait(timeout: DispatchTime.distantFuture)
         
         try rethrowCollectedErrors()
         
         return (anchor:resultAnchor, count: resultCount)
     }
     
-    internal func export(healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
+    internal func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
         for exportTarget in exportTargets {
             try exportTarget.startWriteType(type)
         }
@@ -375,7 +375,7 @@ internal class CorrelationTypeDataExporter: BaseDataExporter, DataExporter {
 internal class WorkoutDataExporter: BaseDataExporter, DataExporter {
     internal var message = "exporting workouts data"
 
-    func writeResults(results: [HKWorkout], exportTargets:[ExportTarget], error: NSError?) -> Void {
+    func writeResults(_ results: [HKWorkout], exportTargets:[ExportTarget], error: NSError?) -> Void {
         if error != nil {
             self.healthQueryError = error
         } else {
@@ -388,27 +388,27 @@ internal class WorkoutDataExporter: BaseDataExporter, DataExporter {
                     
                     var dict: Dictionary<String, AnyObject> = [:]
                     if exportConfiguration.exportUuids {
-                        dict[HealthKitConstants.UUID]               = sample.UUID.UUIDString
+                        dict[HealthKitConstants.UUID]               = sample.uuid.uuidString as AnyObject
                     }
-                    dict[HealthKitConstants.WORKOUT_ACTIVITY_TYPE]  = sample.workoutActivityType.rawValue
-                    dict[HealthKitConstants.S_DATE]                 = sample.startDate
+                    dict[HealthKitConstants.WORKOUT_ACTIVITY_TYPE]  = sample.workoutActivityType.rawValue as AnyObject
+                    dict[HealthKitConstants.S_DATE]                 = sample.startDate as AnyObject
                     if sample.startDate != sample.endDate {
-                        dict[HealthKitConstants.E_DATE]             = sample.endDate
+                        dict[HealthKitConstants.E_DATE]             = sample.endDate as AnyObject
                     }
-                    dict[HealthKitConstants.DURATION]               = sample.duration // seconds
-                    dict[HealthKitConstants.TOTAL_DISTANCE]         = sample.totalDistance?.doubleValueForUnit(HKUnit.meterUnit())
-                    dict[HealthKitConstants.TOTAL_ENERGY_BURNED]    = sample.totalEnergyBurned?.doubleValueForUnit(HKUnit.kilocalorieUnit())
+                    dict[HealthKitConstants.DURATION]               = sample.duration as AnyObject // seconds
+                    dict[HealthKitConstants.TOTAL_DISTANCE]         = sample.totalDistance?.doubleValue(for: HKUnit.meter()) as AnyObject
+                    dict[HealthKitConstants.TOTAL_ENERGY_BURNED]    = sample.totalEnergyBurned?.doubleValue(for: HKUnit.kilocalorie()) as AnyObject
                     
                     var workoutEvents: [Dictionary<String, AnyObject>] = []
                     for event in sample.workoutEvents ?? [] {
                         var workoutEvent: Dictionary<String, AnyObject> = [:]
                         
-                        workoutEvent[HealthKitConstants.TYPE]       =  event.type.rawValue
-                        workoutEvent[HealthKitConstants.S_DATE]     = event.date
+                        workoutEvent[HealthKitConstants.TYPE]       =  event.type.rawValue as AnyObject
+                        workoutEvent[HealthKitConstants.S_DATE]     = event.date as AnyObject
                         workoutEvents.append(workoutEvent)
                     }
                     
-                    dict[HealthKitConstants.WORKOUT_EVENTS]         = workoutEvents
+                    dict[HealthKitConstants.WORKOUT_EVENTS]         = workoutEvents as AnyObject
                     
                     for exportTarget in exportTargets {
                         try exportTarget.writeDictionary(dict);
@@ -426,19 +426,19 @@ internal class WorkoutDataExporter: BaseDataExporter, DataExporter {
     }
     
     
-    internal func export(healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
+    internal func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
         
-        let semaphore = dispatch_semaphore_create(0)
+        let semaphore = DispatchSemaphore(value: 0)
 
         let query = HKSampleQuery(sampleType: HKObjectType.workoutType(), predicate: exportConfiguration.getPredicate(), limit: Int(HKObjectQueryNoLimit), sortDescriptors: [sortDescriptor]) { (query, results, error) -> Void in
-            self.writeResults(results as! [HKWorkout], exportTargets:exportTargets, error:error)
-            dispatch_semaphore_signal(semaphore)
+            self.writeResults(results as! [HKWorkout], exportTargets:exportTargets, error:error as! NSError)
+            semaphore.signal()
         }
         
-        healthStore.executeQuery(query)
+        healthStore.execute(query)
         
         // wait for asyn call to complete
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+        semaphore.wait(timeout: DispatchTime.distantFuture)
         
         try rethrowCollectedErrors()
     }

@@ -10,24 +10,24 @@ import Foundation
 import HealthKit
 
 /// errors the importer can create
-public enum ImportError: ErrorType {
+public enum ImportError: Error {
     /// the type of the profle is not supported
-    case UnsupportedType(String)
+    case unsupportedType(String)
     /// HealthKit is not available on the device
-    case HealthDataNotAvailable
+    case healthDataNotAvailable
 }
 
 /// importer for a healthkit profile
-public class HealthKitProfileImporter {
+open class HealthKitProfileImporter {
     
     let healthStore: HKHealthStore
-    let importQueue = NSOperationQueue()
+    let importQueue = OperationQueue()
     
     /// provide your instance of the HKHealthStore
     public init(healthStore: HKHealthStore) {
         self.healthStore = healthStore
         self.importQueue.maxConcurrentOperationCount = 1
-        self.importQueue.qualityOfService = NSQualityOfService.UserInteractive
+        self.importQueue.qualityOfService = QualityOfService.userInteractive
     }
  
     /**
@@ -38,28 +38,28 @@ public class HealthKitProfileImporter {
         - Parameter onProgress: callback for progress messages
         - Parameter onCompletion: callback if the import has finished. The error is nl if everything went well.
     */
-    public func importProfile (
-        profile: HealthKitProfile,
+    open func importProfile (
+        _ profile: HealthKitProfile,
         deleteExistingData: Bool,
-        onProgress: (message: String, progressInPercent: NSNumber?)->Void,
-        onCompletion: (error: ErrorType?)-> Void) {
+        onProgress: @escaping (_ message: String, _ progressInPercent: NSNumber?)->Void,
+        onCompletion: @escaping (_ error: Error?)-> Void) {
             
             if !HKHealthStore.isHealthDataAvailable() {
-                onCompletion(error:ImportError.HealthDataNotAvailable)
+                onCompletion(ImportError.healthDataNotAvailable)
                 return
             }
             
-            healthStore.requestAuthorizationToShareTypes(HealthKitConstants.authorizationWriteTypes(), readTypes: nil) {
+            healthStore.requestAuthorization(toShare: HealthKitConstants.authorizationWriteTypes(), read: nil) {
                 (success, error) -> Void in
                 /// TODO success error handling
 
-                self.importQueue.addOperationWithBlock(){
+                self.importQueue.addOperation(){
                     
                     // check that the type is one pf the supported profile types
                     let metaData = profile.loadMetaData()
-                    let strExpectedType = String(JsonSingleDocExportTarget)
+                    let strExpectedType = String(describing: JsonSingleDocExportTarget)
                     if metaData.type != strExpectedType {
-                        onCompletion(error: ImportError.UnsupportedType("\(strExpectedType) is only supported"))
+                        onCompletion(ImportError.unsupportedType("\(strExpectedType) is only supported"))
                         return
                     }
                     
@@ -67,35 +67,35 @@ public class HealthKitProfileImporter {
                     if deleteExistingData {
                         
                         HealthKitStoreCleaner(healthStore: self.healthStore).clean(){(message:String, progressInPercent: Double?) in
-                            onProgress(message: message, progressInPercent: progressInPercent == nil ? nil : progressInPercent!/2)
+                            onProgress(message, progressInPercent == nil ? nil : NSNumber(value: progressInPercent!/2))
                         }
                    
                     }
-                    onProgress(message: "Start importing", progressInPercent: nil)
+                    onProgress("Start importing", nil)
 
                     var lastSampleType = ""
                     try! profile.importSamples(){
                         (sample: HKSample) in
                         //print(sample)
                         
-                        if lastSampleType != String(sample.sampleType) {
-                            lastSampleType = String(sample.sampleType)
-                            onProgress(message: "importing \(lastSampleType)", progressInPercent: nil)
+                        if lastSampleType != String(describing: sample.sampleType) {
+                            lastSampleType = String(describing: sample.sampleType)
+                            onProgress("importing \(lastSampleType)", nil)
                         }
                         
-                        self.healthStore.saveObject(sample){
-                            (success:Bool, error:NSError?) in
+                        self.healthStore.save(sample, withCompletion: {
+                            (success:Bool, error:Error?) in
                             /// TODO success error handling print(success, error)
                             if !success {
                                 print(error)
                             }
                             
-                        }
+                        })
                     }
                     
-                    onProgress(message: "Import done", progressInPercent: 1.0)
+                    onProgress("Import done", 1.0)
                     
-                    onCompletion(error:nil)
+                    onCompletion(nil)
                 }
             }
     }

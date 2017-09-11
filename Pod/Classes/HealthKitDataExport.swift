@@ -10,13 +10,13 @@ import Foundation
 import HealthKit
 
 /// Export errors
-public enum ExportError: ErrorType {
+public enum ExportError: Error {
     /// if health is not available on the device
-    case HealthDataNotAvailable
+    case healthDataNotAvailable
     /// in case of illegal arguments
-    case IllegalArgumentError(String)
+    case illegalArgumentError(String)
     /// in case of error during output
-    case DataWriteError(String?)
+    case dataWriteError(String?)
 }
 
 /// what data should be exported
@@ -32,11 +32,11 @@ public enum HealthDataToExportType : String {
     public static let allValues = [ALL, ADDED_BY_THIS_APP, GENERATED_BY_THIS_APP];
 }
 
-public typealias ExportCompletion = (ErrorType?) -> Void
-public typealias ExportProgress = (message: String, progressInPercent: NSNumber?) -> Void
+public typealias ExportCompletion = (Error?) -> Void
+public typealias ExportProgress = (_ message: String, _ progressInPercent: NSNumber?) -> Void
 
 
-class ExportOperation: NSOperation {
+class ExportOperation: Operation {
     
     var exportConfiguration: ExportConfiguration
     var exportTargets: [ExportTarget]
@@ -50,8 +50,8 @@ class ExportOperation: NSOperation {
         exportTargets: [ExportTarget],
         healthStore: HKHealthStore,
         dataExporter: [DataExporter],
-        onProgress: ExportProgress,
-        onError: ExportCompletion,
+        onProgress: @escaping ExportProgress,
+        onError: @escaping ExportCompletion,
         completionBlock: (() -> Void)?
         ) {
         
@@ -63,7 +63,7 @@ class ExportOperation: NSOperation {
         self.onError = onError
         super.init()
         self.completionBlock = completionBlock
-        self.qualityOfService = NSQualityOfService.UserInteractive
+        self.qualityOfService = QualityOfService.userInteractive
     }
     
     override func main() {
@@ -75,8 +75,8 @@ class ExportOperation: NSOperation {
             
             let exporterCount = Double(dataExporter.count)
             
-            for (index, exporter) in dataExporter.enumerate() {
-                self.onProgress(message: exporter.message, progressInPercent: Double(index)/exporterCount)
+            for (index, exporter) in dataExporter.enumerated() {
+                self.onProgress(exporter.message, Double(index)/exporterCount as NSNumber)
                 try exporter.export(healthStore, exportTargets: exportTargets)
             }
             
@@ -84,7 +84,7 @@ class ExportOperation: NSOperation {
                 try exportTarget.endExport();
             }
             
-            self.onProgress(message: "export done", progressInPercent: 1.0)
+            self.onProgress("export done", 1.0)
         } catch let err {
             self.onError(err)
         }
@@ -93,10 +93,10 @@ class ExportOperation: NSOperation {
 }
 
 /// exporter for healthkit data
-public class HealthKitDataExporter {
+open class HealthKitDataExporter {
     
-     let exportQueue: NSOperationQueue = {
-        var queue = NSOperationQueue()
+     let exportQueue: OperationQueue = {
+        var queue = OperationQueue()
         queue.name = "export queue"
         queue.maxConcurrentOperationCount = 1
         return queue
@@ -116,26 +116,26 @@ public class HealthKitDataExporter {
      - Parameter onProgress: callback for progress informations
      - Parameter onCompletion: callback if the export is done or aborted with an Error.
     */
-    public func export(exportTargets exportTargets: [ExportTarget], exportConfiguration: ExportConfiguration, onProgress: ExportProgress, onCompletion: ExportCompletion) -> Void {
+    open func export(exportTargets: [ExportTarget], exportConfiguration: ExportConfiguration, onProgress: @escaping ExportProgress, onCompletion: @escaping ExportCompletion) -> Void {
         
         if !HKHealthStore.isHealthDataAvailable() {
-            onCompletion(ExportError.HealthDataNotAvailable)
+            onCompletion(ExportError.healthDataNotAvailable)
             return
         }
         
         for exportTarget in exportTargets {
             if(!exportTarget.isValid()){
-                onCompletion(ExportError.IllegalArgumentError("invalid export target \(exportTarget)"))
+                onCompletion(ExportError.illegalArgumentError("invalid export target \(exportTarget)"))
                 return
             }
         }
 
 
  
-        healthStore.requestAuthorizationToShareTypes(nil, readTypes: HealthKitConstants.authorizationReadTypes()) {
+        healthStore.requestAuthorization(toShare: nil, read: HealthKitConstants.authorizationReadTypes()) {
             (success, error) -> Void in
             /// TODO success error handling
-            self.healthStore.preferredUnitsForQuantityTypes(HealthKitConstants.healthKitQuantityTypes) {
+            self.healthStore.preferredUnits(for: HealthKitConstants.healthKitQuantityTypes) {
                 (typeMap, error) in
         
                 let dataExporter : [DataExporter] = self.getDataExporters(exportConfiguration, typeMap: typeMap)
@@ -146,7 +146,7 @@ public class HealthKitDataExporter {
                     healthStore: self.healthStore,
                     dataExporter: dataExporter,
                     onProgress: onProgress,
-                    onError: {(err:ErrorType?) -> Void in
+                    onError: {(err:Error?) -> Void in
                         onCompletion(err)
                     },
                     completionBlock:{
@@ -160,7 +160,7 @@ public class HealthKitDataExporter {
         
     }
     
-    internal func getDataExporters(exportConfiguration: ExportConfiguration, typeMap: [HKQuantityType : HKUnit]) -> [DataExporter]{
+    internal func getDataExporters(_ exportConfiguration: ExportConfiguration, typeMap: [HKQuantityType : HKUnit]) -> [DataExporter]{
         var result : [DataExporter] = []
         
         result.append(MetaDataExporter(exportConfiguration: exportConfiguration))

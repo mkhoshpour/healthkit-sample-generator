@@ -11,18 +11,18 @@ import Foundation
 /**
  Utility class for working with file names.
 */
-public class FileNameUtil {
+open class FileNameUtil {
     
     /**
         removes the characters \ ? % * | . : , " < > form a string 
         - Parameter userInput: a string that needs to be transformed to a filename
         - Returns: the string with all the characters mentioned above removed from the string.
     */
-    public static func normalizeName(userInput: String) -> String {
-        let trimmedUserInput = userInput.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceCharacterSet())
+    open static func normalizeName(_ userInput: String) -> String {
+        let trimmedUserInput = userInput.trimmingCharacters(in: CharacterSet.whitespaces)
         
-        let illegalFileNameCharacters = NSCharacterSet.init(charactersInString: "/\\?%*|.:, \"<>")
+        let illegalFileNameCharacters = CharacterSet.init(charactersIn: "/\\?%*|.:, \"<>")
         
-        return trimmedUserInput.componentsSeparatedByCharactersInSet(illegalFileNameCharacters).joinWithSeparator("")
+        return trimmedUserInput.components(separatedBy: illegalFileNameCharacters).joined(separator: "")
     }
 }

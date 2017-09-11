@@ -18,10 +18,10 @@ internal class JsonReader {
         - Parameter jsonString: the json string that should be read.
         - Returns: an Object of type AnyObject that the json string defines.
     */
-    static func toJsonObject(jsonString: String) -> AnyObject {
-        let data = jsonString.dataUsingEncoding(NSUTF8StringEncoding)!
-        let result = try! NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-        return result
+    static func toJsonObject(_ jsonString: String) -> AnyObject {
+        let data = jsonString.data(using: String.Encoding.utf8)!
+        let result = try! JSONSerialization.jsonObject(with: data, options: .allowFragments)
+        return result as AnyObject
     }
     
     /**
@@ -30,7 +30,7 @@ internal class JsonReader {
      - Parameter returnDictForKey: name of the field that should be returned as Dictionary.
      - Returns: a dictionaray for the key with AnyObject values.
      */
-    static func toJsonObject(jsonString: String, returnDictForKey: String) -> Dictionary<String, AnyObject> {
+    static func toJsonObject(_ jsonString: String, returnDictForKey: String) -> Dictionary<String, AnyObject> {
         let keyWithDictInDict = JsonReader.toJsonObject(jsonString) as! Dictionary<String, AnyObject>
         return keyWithDictInDict[returnDictForKey] as! Dictionary<String, AnyObject>
     }
@@ -41,7 +41,7 @@ internal class JsonReader {
      - Parameter returnArrayForKey: name of the field that should be returned as an Array.
      - Returns: an array for the key with AnyObject values.
      */
-    static func toJsonObject(jsonString: String, returnArrayForKey: String) -> [AnyObject] {
+    static func toJsonObject(_ jsonString: String, returnArrayForKey: String) -> [AnyObject] {
         let keyWithDictInDict = JsonReader.toJsonObject(jsonString) as! Dictionary<String, AnyObject>
         return keyWithDictInDict[returnArrayForKey] as! [AnyObject]
     }
@@ -52,19 +52,19 @@ internal class JsonReader {
         - Parameter withJsonHandler: an object that implements JsonHandlerProtocol to process the json events.
      
     */
-    static func readFileAtPath(fileAtPath: String, withJsonHandler jsonHandler: JsonHandlerProtocol) -> Void {
-        let inStream = NSInputStream(fileAtPath: fileAtPath)!
+    static func readFileAtPath(_ fileAtPath: String, withJsonHandler jsonHandler: JsonHandlerProtocol) -> Void {
+        let inStream = InputStream(fileAtPath: fileAtPath)!
         inStream.open()
         
         let tokenizer = JsonTokenizer(jsonHandler:jsonHandler)
         
         let bufferSize = 4096
-        var buffer = Array<UInt8>(count: bufferSize, repeatedValue: 0)
+        var buffer = Array<UInt8>(repeating: 0, count: bufferSize)
         
         while inStream.hasBytesAvailable && !jsonHandler.shouldCancelReadingTheJson() {
             let bytesRead = inStream.read(&buffer, maxLength: bufferSize)
             if bytesRead > 0 {
-                let textFileContents = NSString(bytes: &buffer, length: bytesRead, encoding: NSUTF8StringEncoding)
+                let textFileContents = NSString(bytes: &buffer, length: bytesRead, encoding: String.Encoding.utf8.rawValue)
                 tokenizer.tokenize(textFileContents as! String)
             }
         }
@@ -78,7 +78,7 @@ internal class JsonReader {
 */
 internal class JsonReaderContext {
     var type: JsonContextType
-    private var parent: JsonReaderContext?
+    fileprivate var parent: JsonReaderContext?
     
     var nameOrObject = "" {
         didSet {
@@ -93,7 +93,7 @@ internal class JsonReaderContext {
     }
     
     init(){
-        type = .ROOT
+        type = .root
     }
     
     convenience init(parent: JsonReaderContext, type: JsonContextType){
@@ -104,12 +104,12 @@ internal class JsonReaderContext {
     
     func createArrayContext() -> JsonReaderContext {
         //print("create array context")
-        return JsonReaderContext(parent: self, type: .ARRAY)
+        return JsonReaderContext(parent: self, type: .array)
     }
     
     func createObjectContext() -> JsonReaderContext {
         //print("create object context")
-        return JsonReaderContext(parent: self, type: .OBJECT)
+        return JsonReaderContext(parent: self, type: .object)
     }
     
     func popContext() -> JsonReaderContext {
@@ -136,17 +136,17 @@ internal class JsonTokenizer {
     /**
         removes the question marks from a string.
     */
-    internal func removeQuestionMarks(str: String) -> String{
+    internal func removeQuestionMarks(_ str: String) -> String{
         var result = str
-        result.removeAtIndex(result.startIndex)
-        result.removeAtIndex(result.endIndex.predecessor())
+        result.remove(at: result.startIndex)
+        result.remove(at: result.characters.index(before: result.endIndex))
         return result
     }
     
     /**
         outputs a name.
     */
-    internal func writeName(context: JsonReaderContext) {
+    internal func writeName(_ context: JsonReaderContext) {
         //print("writeName", context.nameOrObject)
         let name = removeQuestionMarks(context.nameOrObject)
         jsonHandler.name(name)
@@ -157,7 +157,7 @@ internal class JsonTokenizer {
     /**
      outputs a value. Value can be a string, a boolean value a null value or a number.
      */
-    internal func writeValue(context: JsonReaderContext){
+    internal func writeValue(_ context: JsonReaderContext){
         //print("writeValue", context.nameOrObject)
         let value:String = context.nameOrObject
         context.nameOrObject = ""
@@ -180,9 +180,9 @@ internal class JsonTokenizer {
             //let number = numberFormatter.numberFromString(value)!
             
             if let intValue = Int(value) {
-                jsonHandler.numberValue(intValue)
+                jsonHandler.numberValue(NSNumber(value: intValue))
             } else if let doubleValue = Double(value) {
-                jsonHandler.numberValue(doubleValue)
+                jsonHandler.numberValue(NSNumber(value: doubleValue))
             }
             
             
@@ -209,7 +209,7 @@ internal class JsonTokenizer {
     /**
         main tokenizer function. The string may have any size.
     */
-    func tokenize(toTokenize: String) -> Void {
+    func tokenize(_ toTokenize: String) -> Void {
         for chr in toTokenize.characters {
             //print(chr)
             switch chr {
@@ -302,13 +302,13 @@ protocol JsonHandlerProtocol {
     func endObject()
     
     // a name was tokenized
-    func name(name: String)
+    func name(_ name: String)
     // a string value was tokenized
-    func stringValue(value: String)
+    func stringValue(_ value: String)
     // a boolean value was tokenized
-    func boolValue(value: Bool)
+    func boolValue(_ value: Bool)
     // a number was tokenized
-    func numberValue(value: NSNumber)
+    func numberValue(_ value: NSNumber)
     // a null value was tokenized
     func nullValue()
     
@@ -326,10 +326,10 @@ class DefaultJsonHandler : JsonHandlerProtocol {
     func startObject(){}
     func endObject(){}
     
-    func name(name: String){}
-    func stringValue(value: String){}
-    func boolValue(value: Bool){}
-    func numberValue(value: NSNumber){}
+    func name(_ name: String){}
+    func stringValue(_ value: String){}
+    func boolValue(_ value: Bool){}
+    func numberValue(_ value: NSNumber){}
     func nullValue(){}
     
     func shouldCancelReadingTheJson() -> Bool {
@@ -372,19 +372,19 @@ class JsonStringOutputJsonHandler: DefaultJsonHandler {
         jw.writeEndObject()
     }
     
-    override func name(name: String){
+    override func name(_ name: String){
         jw.writeFieldName(name)
     }
     
-    override func stringValue(value: String) {
+    override func stringValue(_ value: String) {
         jw.writeString(value)
     }
     
-    override func numberValue(value: NSNumber) {
+    override func numberValue(_ value: NSNumber) {
         jw.writeNumber(value)
     }
     
-    override func boolValue(value: Bool) {
+    override func boolValue(_ value: Bool) {
         jw.writeBool(value)
     }
     
