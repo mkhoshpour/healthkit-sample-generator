@@ -8,6 +8,30 @@
 
 import Foundation
 import HealthKit
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+// FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
+// Consider refactoring the code to use the non-optional operators.
+fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l > r
+  default:
+    return rhs < lhs
+  }
+}
+
 
 class HealthKitStoreCleaner {
     
@@ -27,18 +51,18 @@ class HealthKitStoreCleaner {
         Cleans all HealthKIt data from the healthkit store that are created by this app.
         - Parameter onProgress: callback that informs about the cleaning progress
     */
-    func clean( onProgress: (message: String, progressInPercent: Double?)->Void){
+    func clean( _ onProgress: (_ message: String, _ progressInPercent: Double?)->Void){
         
-        let source = HKSource.defaultSource()
-        let predicate = HKQuery.predicateForObjectsFromSource(source)
+        let source = HKSource.default()
+        let predicate = HKQuery.predicateForObjects(from: source)
         
         let allTypes = HealthKitConstants.authorizationWriteTypes()
         
         for type in allTypes {
             
-            let semaphore = dispatch_semaphore_create(0)
+            let semaphore = DispatchSemaphore(value: 0)
 
-            onProgress(message: "deleting \(type)", progressInPercent: nil)
+            onProgress("deleting \(type)", nil)
             
             let queryCountLimit = 1000
             var result : (anchor:HKQueryAnchor?, count:Int?) = (anchor:nil, count: -1)
@@ -51,26 +75,26 @@ class HealthKitStoreCleaner {
                         (query, results, deleted, newAnchor, error) -> Void in
                         
                         if results?.count > 0 {
-                            self.healthStore.deleteObjects(results!){
-                                (success:Bool, error:NSError?) -> Void in
+                            self.healthStore.delete(results!, withCompletion: {
+                                (success:Bool, error:Error?) -> Void in
                                 if success {
                                     print("deleted \(results?.count) from \(type)")
                                 } else {
                                     print("error deleting from \(type): \(error)")
                                 }
-                                dispatch_semaphore_signal(semaphore)
-                            }
+                                semaphore.signal()
+                            })
                         } else {
-                             dispatch_semaphore_signal(semaphore)
+                             semaphore.signal()
                         }
 
                         result.anchor = newAnchor
                         result.count = results?.count
                 }
                 
-                healthStore.executeQuery(query)
+                healthStore.execute(query)
                 
-                dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+                semaphore.wait(timeout: DispatchTime.distantFuture)
                 
             } while result.count != 0 || result.count==queryCountLimit
             

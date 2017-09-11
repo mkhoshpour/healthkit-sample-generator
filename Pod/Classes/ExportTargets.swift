@@ -19,77 +19,77 @@ public protocol ExportTarget {
     func endExport() throws -> Void
     
     /// output the metadata of the profile
-    func writeMetaData(creationDate creationDate: NSDate, profileName: String, version: String) throws -> Void
+    func writeMetaData(creationDate: Date, profileName: String, version: String) throws -> Void
     /// output the user data from healthkit
-    func writeUserData(userData: Dictionary <String, AnyObject>) throws -> Void
+    func writeUserData(_ userData: Dictionary <String, AnyObject>) throws -> Void
     /// start writing a type
-    func startWriteType(type:HKSampleType) throws -> Void
+    func startWriteType(_ type:HKSampleType) throws -> Void
     /// end writing a type
     func endWriteType() throws -> Void
     /// write a dictionary to the output - e.g. a dict of the sample data
-    func writeDictionary(entry:Dictionary <String, AnyObject>) throws -> Void
+    func writeDictionary(_ entry:Dictionary <String, AnyObject>) throws -> Void
 }
 
 /// An export target that generetes a single json doc for the whole data.
-public class JsonSingleDocExportTarget  {
+open class JsonSingleDocExportTarget  {
     
-    private(set) var jsonWriter: JsonWriter
+    fileprivate(set) var jsonWriter: JsonWriter
     
     init(outputStream: OutputStream){
         self.jsonWriter = JsonWriter(outputStream: outputStream)
     }
     
     /// see ExportTarget Protocol
-    public func startExport() -> Void {
+    open func startExport() -> Void {
         jsonWriter.writeStartObject()
     }
     
     /// see ExportTarget Protocol
-    public func endExport() {
+    open func endExport() {
         jsonWriter.writeEndObject()
         jsonWriter.close()
     }
     
     /// see ExportTarget Protocol
-    public func writeMetaData(creationDate creationDate: NSDate, profileName: String, version: String) {
+    open func writeMetaData(creationDate: Date, profileName: String, version: String) {
         
         jsonWriter.writeObjectFieldStart(HealthKitConstants.META_DATA)
         
         jsonWriter.writeField(HealthKitConstants.CREATION_DATE, value: creationDate)
         jsonWriter.writeField(HealthKitConstants.PROFILE_NAME, value: profileName)
         jsonWriter.writeField(HealthKitConstants.VERSION, value: version)
-        jsonWriter.writeField(HealthKitConstants.TYPE, value: String(JsonSingleDocExportTarget))
+        jsonWriter.writeField(HealthKitConstants.TYPE, value: String(describing: JsonSingleDocExportTarget.self))
         
         jsonWriter.writeEndObject()
     }
     
     /// see ExportTarget Protocol
-    public func writeUserData(userData: Dictionary <String, AnyObject>) throws {
+    open func writeUserData(_ userData: Dictionary <String, AnyObject>) throws {
         try jsonWriter.writeFieldWithObject(HealthKitConstants.USER_DATA, value: userData)
     }
     
     /// see ExportTarget Protocol
-    public func startWriteType(type:HKSampleType) -> Void {
-        jsonWriter.writeArrayFieldStart(String(type))
+    open func startWriteType(_ type:HKSampleType) -> Void {
+        jsonWriter.writeArrayFieldStart(type.identifier)
     }
     
     /// see ExportTarget Protocol
-    public func endWriteType() -> Void {
+    open func endWriteType() -> Void {
         jsonWriter.writeEndArray()
     }
     
     /// see ExportTarget Protocol
-    public func writeDictionary(entry:Dictionary <String, AnyObject>) throws -> Void {
+    open func writeDictionary(_ entry:Dictionary <String, AnyObject>) throws -> Void {
         try jsonWriter.writeObject(entry)
     }
 }
 
 /// an export target that creates a single json doc within a file
-public class JsonSingleDocAsFileExportTarget : JsonSingleDocExportTarget, ExportTarget {
+open class JsonSingleDocAsFileExportTarget : JsonSingleDocExportTarget, ExportTarget {
     
     /// the full path of the ouput file
-    private(set) public var outputFileName: String
-    private(set) var overwriteIfExist = false
+    fileprivate(set) open var outputFileName: String
+    fileprivate(set) var overwriteIfExist = false
     
     /**
         Instantiate a JsonSingleDocAsFileExportTarget. 
@@ -107,11 +107,11 @@ public class JsonSingleDocAsFileExportTarget : JsonSingleDocExportTarget, Export
         Check the validity of the ExportTarget.
         - Returns: true if the file does not already exist or overwrite is allowed.
     */
-    public func isValid() -> Bool {
+    open func isValid() -> Bool {
         var valid = true
         
         // if the outputFileName already exists, the state is only valid, if overwrite is allowed
-        if NSFileManager.defaultManager().fileExistsAtPath(outputFileName) {
+        if FileManager.default.fileExists(atPath: outputFileName) {
             valid = valid && overwriteIfExist
         }
         
@@ -120,7 +120,7 @@ public class JsonSingleDocAsFileExportTarget : JsonSingleDocExportTarget, Export
 }
 
 /// an export target that creates a single json doc in memory
-public class JsonSingleDocInMemExportTarget: JsonSingleDocExportTarget, ExportTarget {
+open class JsonSingleDocInMemExportTarget: JsonSingleDocExportTarget, ExportTarget {
     
     /// create a JsonSingleDocExportTarget in Mem
     public init(){
@@ -128,12 +128,12 @@ public class JsonSingleDocInMemExportTarget: JsonSingleDocExportTarget, ExportTa
     }
     
     /// is always valid
-    public func isValid() -> Bool {
+    open func isValid() -> Bool {
         return true
     }
     
     /// see ExportTarget Protocol
-    public func getJsonString() -> String {
+    open func getJsonString() -> String {
         return jsonWriter.getJsonString()
     }
 }

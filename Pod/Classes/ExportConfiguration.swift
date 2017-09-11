@@ -35,9 +35,9 @@ internal extension ExportConfiguration {
         case .ALL:
             return predicateNoCorreltion
         case .ADDED_BY_THIS_APP:
-            return NSCompoundPredicate(andPredicateWithSubpredicates: [predicateNoCorreltion, HKQuery.predicateForObjectsFromSource(HKSource.defaultSource())])
+            return NSCompoundPredicate(andPredicateWithSubpredicates: [predicateNoCorreltion, HKQuery.predicateForObjects(from: HKSource.default())])
         case .GENERATED_BY_THIS_APP:
-            return NSCompoundPredicate(andPredicateWithSubpredicates: [predicateNoCorreltion, HKQuery.predicateForObjectsWithMetadataKey("GeneratorSource", allowedValues: ["HSG"])])
+            return NSCompoundPredicate(andPredicateWithSubpredicates: [predicateNoCorreltion, HKQuery.predicateForObjects(withMetadataKey: "GeneratorSource", allowedValues: ["HSG"])])
         }
         
     }

@@ -9,20 +9,20 @@
 import Foundation
 
 /// Utility class to generate Profiles from files in a directory
-public class HealthKitProfileReader {
+open class HealthKitProfileReader {
 
     /**
         Creates an array of profiles that are stored in a folder
         - Parameter folder: Url of the folder
         - Returns: an array of HealthKitProfile objects
     */
-    public static func readProfilesFromDisk(folder: NSURL) -> [HealthKitProfile]{
+    open static func readProfilesFromDisk(_ folder: URL) -> [HealthKitProfile]{
     
         var profiles:[HealthKitProfile] = []
-        let enumerator = NSFileManager.defaultManager().enumeratorAtPath(folder.path!)
+        let enumerator = FileManager.default.enumerator(atPath: folder.path)
         for file in enumerator! {
-            let pathUrl = folder.URLByAppendingPathComponent(file as! String)
-            if NSFileManager.defaultManager().isReadableFileAtPath(pathUrl.path!) && pathUrl.pathExtension == "hsg" {
+            let pathUrl = folder.appendingPathComponent(file as! String)
+            if FileManager.default.isReadableFile(atPath: pathUrl.path) && pathUrl.pathExtension == "hsg" {
                 profiles.append(HealthKitProfile(fileAtPath:pathUrl))
             }
         }

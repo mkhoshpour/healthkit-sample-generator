@@ -9,30 +9,30 @@
 import Foundation
 import HealthKit
 ///MetaData of a profile
-public class HealthKitProfileMetaData {
+open class HealthKitProfileMetaData {
     /// the name of the profile
-    private(set) public var profileName: String?
+    fileprivate(set) open var profileName: String?
     /// the date the profie was exported
-    private(set) public var creationDate: NSDate?
+    fileprivate(set) open var creationDate: Date?
     /// the version of the profile
-    private(set) public var version: String?
+    fileprivate(set) open var version: String?
     /// the type of the profile
-    private(set) public var type: String?
+    fileprivate(set) open var type: String?
 }
 
 /// a healthkit Profile - can be used to read data from the profile and import the profile into the healthkit store.
-public class HealthKitProfile : CustomStringConvertible {
+open class HealthKitProfile : CustomStringConvertible {
     
-    let fileAtPath: NSURL
+    let fileAtPath: URL
     /// the name of the profile file - without any path components
-    private(set) public var fileName: String
+    fileprivate(set) open var fileName: String
     /// the size of the profile file in bytes
-    private(set) public var fileSize:UInt64?
+    fileprivate(set) open var fileSize:UInt64?
     
-    let fileReadQueue = NSOperationQueue()
+    let fileReadQueue = OperationQueue()
 
     /// for textual representation of this object
-    public var description: String {
+    open var description: String {
         return "\(fileName) \(fileSize)"
     }
     
@@ -40,12 +40,12 @@ public class HealthKitProfile : CustomStringConvertible {
         constructor for aprofile
         - Parameter fileAtPath: the Url of the profile in the file system
     */
-    public init(fileAtPath: NSURL){
+    public init(fileAtPath: URL){
         fileReadQueue.maxConcurrentOperationCount = 1
-        fileReadQueue.qualityOfService = NSQualityOfService.UserInteractive
+        fileReadQueue.qualityOfService = QualityOfService.userInteractive
         self.fileAtPath = fileAtPath
-        self.fileName   = self.fileAtPath.lastPathComponent!
-        let attr:NSDictionary? = try! NSFileManager.defaultManager().attributesOfItemAtPath(fileAtPath.path!)
+        self.fileName   = self.fileAtPath.lastPathComponent
+        let attr:NSDictionary? = try! FileManager.default.attributesOfItem(atPath: fileAtPath.path) as NSDictionary
         if let _attr = attr {
             self.fileSize = _attr.fileSize();
         }
@@ -60,12 +60,12 @@ public class HealthKitProfile : CustomStringConvertible {
         let result          = HealthKitProfileMetaData()
         let metaDataOutput  = MetaDataOutputJsonHandler()
         
-        JsonReader.readFileAtPath(self.fileAtPath.path!, withJsonHandler: metaDataOutput)
+        JsonReader.readFileAtPath(self.fileAtPath.path, withJsonHandler: metaDataOutput)
         
         let metaData = metaDataOutput.getMetaData()
         
         if let dateTime = metaData["creationDate"] as? NSNumber {
-            result.creationDate = NSDate(timeIntervalSince1970: dateTime.doubleValue/1000)
+            result.creationDate = Date(timeIntervalSince1970: dateTime.doubleValue/1000)
         }
         
         result.profileName  = metaData["profileName"] as? String
@@ -81,14 +81,14 @@ public class HealthKitProfile : CustomStringConvertible {
      - Parameter asynchronous: if true the metsdata wil be read asynchronously. If false the read will be synchronous.
      - Parameter callback: is called if the meatdat have been read.
     */
-    public func loadMetaData(asynchronous:Bool, callback:(metaData: HealthKitProfileMetaData) -> Void ){
+    open func loadMetaData(_ asynchronous:Bool, callback:@escaping (_ metaData: HealthKitProfileMetaData) -> Void ){
         
         if asynchronous {
-            fileReadQueue.addOperationWithBlock(){
-                callback(metaData: self.loadMetaData())
+            fileReadQueue.addOperation(){
+                callback(self.loadMetaData())
             }
         } else {
-            callback(metaData: loadMetaData())
+            callback(loadMetaData())
         }
     }
     
@@ -96,7 +96,7 @@ public class HealthKitProfile : CustomStringConvertible {
         Reads all samples from the profile and fires the callback onSample on every sample.
         - Parameter onSample: the callback is called on every sample.
     */
-    func importSamples(onSample: (sample: HKSample) -> Void) throws {
+    func importSamples(_ onSample: @escaping (_ sample: HKSample) -> Void) throws {
         
         let sampleImportHandler = SampleOutputJsonHandler(){
             (sampleDict:AnyObject, typeName: String) in
@@ -104,18 +104,18 @@ public class HealthKitProfile : CustomStringConvertible {
             if let creator = SampleCreatorRegistry.get(typeName) {
                 let sampleOpt:HKSample? = creator.createSample(sampleDict)
                 if let sample = sampleOpt {
-                    onSample(sample: sample)
+                    onSample(sample)
                 }
             }
         }
         
-        JsonReader.readFileAtPath(self.fileAtPath.path!, withJsonHandler: sampleImportHandler)
+        JsonReader.readFileAtPath(self.fileAtPath.path, withJsonHandler: sampleImportHandler)
     }
     
     /**
         removes the profile from the file system
     */
-    public func deleteFile() throws {
-        try NSFileManager.defaultManager().removeItemAtPath(fileAtPath.path!)
+    open func deleteFile() throws {
+        try FileManager.default.removeItem(atPath: fileAtPath.path)
     }
 }

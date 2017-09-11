@@ -24,7 +24,7 @@ class MetaDataOutputJsonHandler: DefaultJsonHandler {
         return metaDataDict
     }
     
-    override func name(name: String) {
+    override func name(_ name: String) {
         self.name = name
     }
     
@@ -39,12 +39,12 @@ class MetaDataOutputJsonHandler: DefaultJsonHandler {
         }
     }
     
-    override func stringValue(value: String){
+    override func stringValue(_ value: String){
         if collectProperties {
-            metaDataDict[name!] = value
+            metaDataDict[name!] = value as AnyObject
         }
     }
-    override func numberValue(value: NSNumber){
+    override func numberValue(_ value: NSNumber){
         if collectProperties {
             metaDataDict[name!] = value
         }
@@ -75,48 +75,48 @@ class SampleOutputJsonHandler: JsonHandlerProtocol {
             self.parent = parent
         }
         
-        func put(key:String, value: AnyObject?) {
+        func put(_ key:String, value: AnyObject?) {
             dict[key] = value
         }
         
-        func createArrayContext(name: String) -> SampleContext {
-            let sc = SampleContext(parent: self, type: .ARRAY)
+        func createArrayContext(_ name: String) -> SampleContext {
+            let sc = SampleContext(parent: self, type: .array)
             sc.name = name
             childs.append(sc)
             return sc
         }
         
         func createObjectContext() -> SampleContext {
-            let sc = SampleContext(parent: self, type: .OBJECT)
+            let sc = SampleContext(parent: self, type: .object)
             childs.append(sc)
             return sc
         }
         
         func getStructureAsDict() -> AnyObject {
             
-            if type == .ARRAY {
+            if type == .array {
                 var result:[AnyObject] = []
                 for child in childs {
                     result.append(child.getStructureAsDict())
                 }
-                return result;
+                return result as AnyObject;
             }
             
             
             var resultDict = dict
             for child in childs {
-                if child.type == .ARRAY {
+                if child.type == .array {
                     resultDict[child.name!] =  child.getStructureAsDict() as AnyObject!
                 }
             }
             
-            return resultDict
+            return resultDict as AnyObject
         }
     }
     
-    internal func printWithLevel(level:Int, string:String){
+    internal func printWithLevel(_ level:Int, string:String){
         var outString = "\(level)"
-        for var i=0; i<level; i++ {
+        for i in 0 ..< level {
             outString += " "
         }
         outString += string
@@ -124,7 +124,7 @@ class SampleOutputJsonHandler: JsonHandlerProtocol {
     }
     
     /// callback for every found HealthKitSample
-    let onSample : (sample: AnyObject, typeName:String) -> Void
+    let onSample : (_ sample: AnyObject, _ typeName:String) -> Void
     /// save the lastname to decide what is a sample and what is the name of a value
     var lastName = ""
     /// a samplecontext - created for evenry new sample
@@ -134,16 +134,16 @@ class SampleOutputJsonHandler: JsonHandlerProtocol {
     /// the healthkit sample type that is currently processed
     var hkTypeName: String? = nil
     
-    init(onSample: (sample: AnyObject, typeName:String) -> Void) {
+    init(onSample: @escaping (_ sample: AnyObject, _ typeName:String) -> Void) {
         self.onSample = onSample
     }
     
-    func name(name: String) {
+    func name(_ name: String) {
         lastName = name
     }
     
     func startArray() {
-        level++
+        level += 1
         if level == 2 && lastName.hasPrefix("HK") {
             hkTypeName = lastName
         }
@@ -157,17 +157,17 @@ class SampleOutputJsonHandler: JsonHandlerProtocol {
         if level == 2 {
             hkTypeName = nil
         }
-        level--
+        level -= 1
         
         sampleContext = sampleContext == nil ? nil : sampleContext!.parent
     }
     
     func startObject() {
-        level++
+        level += 1
         
         if level == 3 {
             // a new HKSample starts
-            sampleContext = SampleContext(parent: nil, type: .OBJECT)
+            sampleContext = SampleContext(parent: nil, type: .object)
             sampleContext?.name = hkTypeName
         }
         
@@ -179,26 +179,26 @@ class SampleOutputJsonHandler: JsonHandlerProtocol {
     func endObject() {
         if level == 3 {
             // the HKSample ends
-            onSample(sample: sampleContext!.getStructureAsDict(), typeName:hkTypeName!)
+            onSample(sampleContext!.getStructureAsDict(), hkTypeName!)
             sampleContext = nil
         }
         sampleContext = sampleContext == nil ? nil : sampleContext!.parent
-        level--
+        level -= 1
     }
     
-    func stringValue(value: String){
+    func stringValue(_ value: String){
         if sampleContext != nil {
-            sampleContext!.put(lastName, value:value)
+            sampleContext!.put(lastName, value:value as AnyObject)
         }
     }
     
-    func boolValue(value: Bool){
+    func boolValue(_ value: Bool){
         if sampleContext != nil {
-            sampleContext!.put(lastName, value:value)
+            sampleContext!.put(lastName, value:value as AnyObject)
         }
     }
     
-    func numberValue(value: NSNumber){
+    func numberValue(_ value: NSNumber){
         if sampleContext != nil {
             sampleContext!.put(lastName, value:value)
         }

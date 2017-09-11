@@ -8,20 +8,20 @@
 
 import Foundation
 
-enum JsonWriterError: ErrorType {
-    case NSJSONSerializationError(String)
+enum JsonWriterError: Error {
+    case nsjsonSerializationError(String)
 }
 
 enum JsonContextType : Int {
-    case ROOT
-    case ARRAY
-    case OBJECT
+    case root
+    case array
+    case object
 }
 
 enum JsonWriterStatus : Int {
-    case OK
-    case WILL_NEED_COMMA
-    case WILL_NEED_COLON
+    case ok
+    case will_NEED_COMMA
+    case will_NEED_COLON
 }
 
 /**
@@ -34,7 +34,7 @@ class JsonWriterContext {
     var startField = false
     
     init(){
-        type = .ROOT
+        type = .root
     }
     
     convenience init(parent: JsonWriterContext, type: JsonContextType){
@@ -48,14 +48,14 @@ class JsonWriterContext {
     */
     func createArrayContext() -> JsonWriterContext {
         writeValue()
-        return JsonWriterContext(parent: self, type: .ARRAY)
+        return JsonWriterContext(parent: self, type: .array)
     }
     /**
      creates an object in the current context.
      */
     func createObjectContext() -> JsonWriterContext {
         writeValue()
-        return JsonWriterContext(parent: self, type: .OBJECT)
+        return JsonWriterContext(parent: self, type: .object)
     }
     
     func writeField(){
@@ -63,7 +63,7 @@ class JsonWriterContext {
     }
     
     func writeValue() {
-        index++
+        index += 1
         startField = false
     }
     
@@ -77,22 +77,22 @@ class JsonWriterContext {
     
     func willWriteField() -> JsonWriterStatus {
         if startField {
-            return .WILL_NEED_COLON
+            return .will_NEED_COLON
         }
         if(index > 0){
-            return .WILL_NEED_COMMA
+            return .will_NEED_COMMA
         }
-        return .OK
+        return .ok
     }
     
     func willWriteValue() -> JsonWriterStatus {
         if startField {
-            return .WILL_NEED_COLON
+            return .will_NEED_COLON
         }
         if(index > 0){
-            return .WILL_NEED_COMMA
+            return .will_NEED_COMMA
         }
-        return .OK
+        return .ok
     }
 }
 
@@ -151,17 +151,17 @@ internal class JsonWriter {
     /**
         Starts writing a field name - a json string that will be written in quotation marks.
     */
-    internal func writeFieldName(name: String) {
+    internal func writeFieldName(_ name: String) {
         let status = writerContext.willWriteField()
         writeCommaOrColon(status)
         writerContext.writeField()
         write("\""+name+"\"")
     }
     
-    internal func writeCommaOrColon(status: JsonWriterStatus){
-        if status == .WILL_NEED_COMMA {
+    internal func writeCommaOrColon(_ status: JsonWriterStatus){
+        if status == .will_NEED_COMMA {
             write(",")
-        } else if status == .WILL_NEED_COLON {
+        } else if status == .will_NEED_COLON {
             write(":")
         }
     }
@@ -169,9 +169,9 @@ internal class JsonWriter {
     /**
      Writes a String value. All '"' characters will be escaped.
     */
-    internal func writeString(text: String?) {
+    internal func writeString(_ text: String?) {
         if let v = text {
-            let escapedV = v.stringByReplacingOccurrencesOfString("\"", withString: "\"")
+            let escapedV = v.replacingOccurrences(of: "\"", with: "\"")
             let status = writerContext.willWriteValue()
             writeCommaOrColon(status)
             writerContext.writeValue()
@@ -185,7 +185,7 @@ internal class JsonWriter {
         Writes a NSNumber. If the NSNumber-object ist a boolean true/false is written to the stream. 
         If the NSNumber is nil null will be written
     */
-    internal func writeNumber(number: NSNumber?) {
+    internal func writeNumber(_ number: NSNumber?) {
         if let v = number {
             let status = writerContext.willWriteValue()
             writeCommaOrColon(status)
@@ -204,7 +204,7 @@ internal class JsonWriter {
     /**
         Writes a boolean value to the stream - e.g. true or false. If the value is nil null is written to the stream.
     */
-    internal func writeBool(value: Bool?) {
+    internal func writeBool(_ value: Bool?) {
         if let v = value {
             let status = writerContext.willWriteValue()
             writeCommaOrColon(status)
@@ -218,9 +218,9 @@ internal class JsonWriter {
     /**
         Writes an NSDate object to the strem. JSON did not support a date value. Instead the milliseconds since 01.01.1970 will be used.
     */
-    internal func writeDate(value: NSDate?) {
+    internal func writeDate(_ value: Date?) {
         if let date = value {
-            let number = NSNumber(double:date.timeIntervalSince1970*1000)
+            let number = NSNumber(value: date.timeIntervalSince1970*1000 as Double)
             writeNumber(number)
         } else {
             writeNull()
@@ -246,20 +246,20 @@ internal class JsonWriter {
         - Throws: JsonWriterError if a value is of unsupported type.
      
     */
-    internal func writeObject(anyObject: AnyObject) throws {
-        if let array = anyObject as? [AnyObject] {
+    internal func writeObject(_ anyObject: Any) throws {
+        if let array = anyObject as? [Any] {
             writeStartArray()
             for element in array {
                 if let strValue = element as? String {
                     writeString(strValue)
                 } else if let numberValue = element as? NSNumber {
                     writeNumber(numberValue)
-                } else if let dateValue = element as? NSDate {
+                } else if let dateValue = element as? Date {
                     writeDate(dateValue)
                 } else if let dictValue = element as?  Dictionary<String, AnyObject> {
-                    try writeObject(dictValue)
+                    try writeObject(dictValue as AnyObject)
                 } else  {
-                    throw JsonWriterError.NSJSONSerializationError("unsupported value type: \(element.dynamicType)")
+                    throw JsonWriterError.nsjsonSerializationError("unsupported value type: \(type(of: element))")
                 }
             }
             writeEndArray()
@@ -272,18 +272,18 @@ internal class JsonWriter {
                     writeField(key, value: strValue)
                 } else if let numberValue = value as? NSNumber {
                     writeField(key, value: numberValue)
-                } else if let dateValue = value as? NSDate {
+                } else if let dateValue = value as? Date {
                     writeField(key, value: dateValue)
                 } else if let arrayValue = value as? NSArray {
                     writeFieldName(key)
                     try writeObject(arrayValue)
                 } else  {
-                    throw JsonWriterError.NSJSONSerializationError("unsupported value type: \(value.dynamicType)")
+                    throw JsonWriterError.nsjsonSerializationError("unsupported value type: \(type(of: value))")
                 }
             }
             writeEndObject()
         }else  {
-            throw JsonWriterError.NSJSONSerializationError("unsupported value type: \(anyObject.dynamicType)")
+            throw JsonWriterError.nsjsonSerializationError("unsupported value type: \(type(of: anyObject))")
         }
     }
     
@@ -292,7 +292,7 @@ internal class JsonWriter {
       - Parameter fieldName: The name of the field
       - Parameter value: The String value
     */
-    internal func writeField(fieldName: String, value: String?) {
+    internal func writeField(_ fieldName: String, value: String?) {
         writeFieldName(fieldName)
         writeString(value)
     }
@@ -302,7 +302,7 @@ internal class JsonWriter {
      - Parameter fieldName: The name of the field
      - Parameter value: The Bool value
      */
-    internal func writeField(fieldName: String, value: Bool?) {
+    internal func writeField(_ fieldName: String, value: Bool?) {
         writeFieldName(fieldName)
         writeBool(value)
     }
@@ -312,7 +312,7 @@ internal class JsonWriter {
      - Parameter fieldName: The name of the field
      - Parameter value: The NSNumber value
      */
-    internal func writeField(fieldName: String, value: NSNumber?) {
+    internal func writeField(_ fieldName: String, value: NSNumber?) {
         writeFieldName(fieldName)
         writeNumber(value)
     }
@@ -322,7 +322,7 @@ internal class JsonWriter {
      - Parameter fieldName: The name of the field
      - Parameter value: The NSDate value
      */
-    internal func writeField(fieldName: String, value: NSDate?) {
+    internal func writeField(_ fieldName: String, value: Date?) {
         writeFieldName(fieldName)
         writeDate(value)
     }
@@ -332,7 +332,7 @@ internal class JsonWriter {
      - Parameter fieldName: The name of the field
      - Parameter value: The Object/Array value - see function writeObject for more information.
      */
-    internal func writeFieldWithObject(fieldName: String, value: AnyObject) throws {
+    internal func writeFieldWithObject(_ fieldName: String, value: Any) throws {
         writeFieldName(fieldName)
         try writeObject(value)
     }
@@ -340,7 +340,7 @@ internal class JsonWriter {
     /**
         Writes a named arrays.
     */
-    internal func writeArrayFieldStart(fieldName: String) {
+    internal func writeArrayFieldStart(_ fieldName: String) {
         writeFieldName(fieldName)
         writeStartArray()
     }
@@ -348,7 +348,7 @@ internal class JsonWriter {
     /**
      Writes a named object.
      */
-    internal func writeObjectFieldStart(fieldName: String) {
+    internal func writeObjectFieldStart(_ fieldName: String) {
         writeFieldName(fieldName)
         writeStartObject()
     }
@@ -363,7 +363,7 @@ internal class JsonWriter {
     /**
       Writes the string to the outputstream. If the stream is not open the stream will be opened.
      */
-    internal func write(theString: String) {
+    internal func write(_ theString: String) {
         if !outputStream.isOpen() {
             outputStream.open()
         }
