@@ -106,7 +106,7 @@ class SampleOutputJsonHandler: JsonHandlerProtocol {
             var resultDict = dict
             for child in childs {
                 if child.type == .array {
-                    resultDict[child.name!] =  child.getStructureAsDict() as AnyObject!
+                    resultDict[child.name!] =  child.getStructureAsDict() as AnyObject?
                 }
             }
             

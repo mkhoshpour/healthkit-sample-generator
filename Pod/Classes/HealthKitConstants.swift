@@ -144,29 +144,29 @@ class HealthKitConstants {
 
     static func allTypes() -> Set<HKObjectType> {
         var allTypes : Set<HKObjectType> = Set()
-        allTypes.formUnion(healthKitCharacteristicsTypes as Set<HKObjectType>!)
-        allTypes.formUnion(healthKitQuantityTypes as Set<HKObjectType>!)
-        allTypes.formUnion(healthKitCategoryTypes as Set<HKObjectType>!)
-        allTypes.formUnion(healthKitCorrelationTypes as Set<HKObjectType>!)
+        allTypes.formUnion((healthKitCharacteristicsTypes as Set<HKObjectType>?)!)
+        allTypes.formUnion((healthKitQuantityTypes as Set<HKObjectType>?)!)
+        allTypes.formUnion((healthKitCategoryTypes as Set<HKObjectType>?)!)
+        allTypes.formUnion((healthKitCorrelationTypes as Set<HKObjectType>?)!)
         allTypes.insert(workoutType)
         return allTypes
     }
     
     static func authorizationReadTypes() -> Set<HKObjectType> {
         var authTypes : Set<HKObjectType> = Set()
-        authTypes.formUnion(HealthKitConstants.healthKitCharacteristicsTypes as Set<HKObjectType>!)
-        authTypes.formUnion(HealthKitConstants.healthKitQuantityTypes as Set<HKObjectType>!)
-        authTypes.formUnion(HealthKitConstants.healthKitQuantityLockedTypes as Set<HKObjectType>!)
-        authTypes.formUnion(HealthKitConstants.healthKitCategoryTypes as Set<HKObjectType>!)
-        authTypes.formUnion(HealthKitConstants.healthKitCategoryLockedTypes as Set<HKObjectType>!)
+        authTypes.formUnion((HealthKitConstants.healthKitCharacteristicsTypes as Set<HKObjectType>?)!)
+        authTypes.formUnion((HealthKitConstants.healthKitQuantityTypes as Set<HKObjectType>?)!)
+        authTypes.formUnion((HealthKitConstants.healthKitQuantityLockedTypes as Set<HKObjectType>?)!)
+        authTypes.formUnion((HealthKitConstants.healthKitCategoryTypes as Set<HKObjectType>?)!)
+        authTypes.formUnion((HealthKitConstants.healthKitCategoryLockedTypes as Set<HKObjectType>?)!)
         authTypes.insert(HealthKitConstants.workoutType)
         return authTypes
     }
     
     static func authorizationWriteTypes() -> Set<HKSampleType> {
          var authTypes : Set<HKSampleType> = Set()
-        authTypes.formUnion(HealthKitConstants.healthKitQuantityTypes as Set<HKSampleType>!)
-        authTypes.formUnion(HealthKitConstants.healthKitCategoryTypes as Set<HKSampleType>!)
+        authTypes.formUnion((HealthKitConstants.healthKitQuantityTypes as Set<HKSampleType>?)!)
+        authTypes.formUnion((HealthKitConstants.healthKitCategoryTypes as Set<HKSampleType>?)!)
         authTypes.insert(HealthKitConstants.workoutType)
         return authTypes
     }

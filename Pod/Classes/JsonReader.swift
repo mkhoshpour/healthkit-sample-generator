@@ -139,7 +139,7 @@ internal class JsonTokenizer {
     internal func removeQuestionMarks(_ str: String) -> String{
         var result = str
         result.remove(at: result.startIndex)
-        result.remove(at: result.characters.index(before: result.endIndex))
+        result.remove(at: result.index(before: result.endIndex))
         return result
     }
     
@@ -210,7 +210,7 @@ internal class JsonTokenizer {
         main tokenizer function. The string may have any size.
     */
     func tokenize(_ toTokenize: String) -> Void {
-        for chr in toTokenize.characters {
+        for chr in toTokenize {
             //print(chr)
             switch chr {
             case "\"":

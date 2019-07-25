@@ -16,7 +16,7 @@ open class HealthKitProfileReader {
         - Parameter folder: Url of the folder
         - Returns: an array of HealthKitProfile objects
     */
-    open static func readProfilesFromDisk(_ folder: URL) -> [HealthKitProfile]{
+    public static func readProfilesFromDisk(_ folder: URL) -> [HealthKitProfile]{
     
         var profiles:[HealthKitProfile] = []
         let enumerator = FileManager.default.enumerator(atPath: folder.path)

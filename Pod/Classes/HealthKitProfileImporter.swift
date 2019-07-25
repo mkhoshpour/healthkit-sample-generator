@@ -57,7 +57,7 @@ open class HealthKitProfileImporter {
                     
                     // check that the type is one pf the supported profile types
                     let metaData = profile.loadMetaData()
-                    let strExpectedType = String(describing: JsonSingleDocExportTarget)
+                    let strExpectedType = String(describing: JsonSingleDocExportTarget.self)
                     if metaData.type != strExpectedType {
                         onCompletion(ImportError.unsupportedType("\(strExpectedType) is only supported"))
                         return
