@@ -27,7 +27,7 @@ class ExportViewController : UIViewController, UITextFieldDelegate {
     
     var exportConfigurationValid = false {
         didSet {
-            btnExport.enabled = exportConfigurationValid
+            btnExport.isEnabled = exportConfigurationValid
         }
     }
     
@@ -57,9 +57,9 @@ class ExportViewController : UIViewController, UITextFieldDelegate {
     
     var exportInProgress = false {
         didSet {
-            avExporting.hidden      = !exportInProgress
-            btnExport.enabled       = !exportInProgress
-            pvExportProgress.hidden = !exportInProgress
+            avExporting.isHidden      = !exportInProgress
+            btnExport.isEnabled       = !exportInProgress
+            pvExportProgress.isHidden = !exportInProgress
         }
     }
     
@@ -68,11 +68,11 @@ class ExportViewController : UIViewController, UITextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        tfProfileName.text                  = "output" + UIUtil.sharedInstance.formatDateForFileName(NSDate())
-        tfProfileName.addTarget(self, action: "textFieldDidChange:", forControlEvents: UIControlEvents.EditingChanged)
+        tfProfileName.text                  = "output" + UIUtil.sharedInstance.formatDateForFileName(date: NSDate())
+        tfProfileName.addTarget(self, action: #selector(textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
         tfProfileName.delegate              = self
         
-        scExportType.selectedSegmentIndex   = HealthDataToExportType.allValues.indexOf(HealthDataToExportType.ALL)!
+        scExportType.selectedSegmentIndex   = HealthDataToExportType.allValues.index(of:HealthDataToExportType.ALL)!
         
         lbExportMessages.text               = ""
         
@@ -94,23 +94,23 @@ class ExportViewController : UIViewController, UITextFieldDelegate {
             exportConfiguration: exportConfiguration!,
             
             onProgress: {(message: String, progressInPercent: NSNumber?)->Void in
-                dispatch_async(dispatch_get_main_queue(), {
+                DispatchQueue.main.async {
                     self.lbExportMessages.text = message
                     if let progress = progressInPercent {
                         self.pvExportProgress.progress = progress.floatValue
                     }
-                })
+                }
             },
             
-            onCompletion: {(error: ErrorType?)-> Void in
-                dispatch_async(dispatch_get_main_queue(), {
+            onCompletion: {(error: Error?)-> Void in
+                DispatchQueue.main.async {
                     if let exportError = error {
                         self.lbExportMessages.text = "Export error: \(exportError)"
                         print(exportError)
                     }
                     
                     self.exportInProgress = false
-                })
+                }
             }
         )
     }
@@ -121,17 +121,17 @@ class ExportViewController : UIViewController, UITextFieldDelegate {
     
     func createAndAnalyzeExportConfiguration(){
         var fileName = "output"
-        if let text = tfProfileName.text where !text.isEmpty {
+        if let text = tfProfileName.text, !text.isEmpty {
             fileName = FileNameUtil.normalizeName(text)
         }
         
-        let documentsUrl    = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0]
+        let documentsUrl    = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         print(documentsUrl)
-        let outputFileName  = documentsUrl.URLByAppendingPathComponent(fileName+".json.hsg").path!
+        let outputFileName  = documentsUrl.appendingPathComponent(fileName+".json.hsg").path
         
         exportTarget = JsonSingleDocAsFileExportTarget(
             outputFileName: outputFileName,
-            overwriteIfExist: swOverwriteIfExist.on)
+            overwriteIfExist: swOverwriteIfExist.isOn)
         
         exportConfiguration = HealthDataFullExportConfiguration(profileName: tfProfileName.text!, exportType: HealthDataToExportType.allValues[scExportType.selectedSegmentIndex])
 
@@ -139,7 +139,7 @@ class ExportViewController : UIViewController, UITextFieldDelegate {
         exportConfigurationValid = exportTarget!.isValid()
     }
 
-    func textFieldDidChange(_: UITextField) {
+    @objc func textFieldDidChange(_: UITextField) {
        createAndAnalyzeExportConfiguration()
     }
 

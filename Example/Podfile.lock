@@ -1,20 +1,27 @@
 PODS:
-  - HealthKitSampleGenerator (0.2.0)
-  - Nimble (2.0.0-rc.3)
-  - Quick (0.6.0)
+  - HealthKitSampleGenerator (1.0.4)
+  - Nimble (8.0.2)
+  - Quick (2.1.0)
 
 DEPENDENCIES:
   - HealthKitSampleGenerator (from `../`)
-  - Nimble (= 2.0.0-rc.3)
-  - Quick (~> 0.6.0)
+  - Nimble (= 8.0.2)
+  - Quick (~> 2.1.0)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - Nimble
+    - Quick
 
 EXTERNAL SOURCES:
   HealthKitSampleGenerator:
-    :path: ../
+    :path: "../"
 
 SPEC CHECKSUMS:
-  HealthKitSampleGenerator: 00ac6ac6087a58249ca2f76e06295230a3181ed3
-  Nimble: 9dff98ee195ffe7351d3b2fb01d3a1420fd97948
-  Quick: 563686dbcf0ae0f9f7401ac9cd2d786ee1b7f3d7
+  HealthKitSampleGenerator: 5a56763c6689ccd9eab96a9f60c107bd867eadff
+  Nimble: 622629381bda1dd5678162f21f1368cec7cbba60
+  Quick: 4be43f6634acfa727dd106bdf3929ce125ffa79d
 
-COCOAPODS: 0.39.0
+PODFILE CHECKSUM: 5a0cbbee0a7cd6b5beac223a2b21c76a0d9ff74c
+
+COCOAPODS: 1.7.3

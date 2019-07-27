@@ -30,11 +30,11 @@ class ImportProfileViewController : UIViewController {
     
     var importing = false {
         didSet {
-            pvImportProgress.hidden = !importing
-            aiImporting.hidden = !importing
+            pvImportProgress.isHidden = !importing
+            aiImporting.isHidden = !importing
             navigationItem.hidesBackButton = importing
-            swDeleteExistingData.enabled = !importing
-            btImport.enabled = !importing
+            swDeleteExistingData.isEnabled = !importing
+            btImport.isEnabled = !importing
         }
     }
     
@@ -48,13 +48,13 @@ class ImportProfileViewController : UIViewController {
         lbImportProgress.text   = ""
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
         profile?.loadMetaData(true) { (metaData: HealthKitProfileMetaData) in
-            NSOperationQueue.mainQueue().addOperationWithBlock(){
+            OperationQueue.main.addOperation(){
                 self.lbProfileName.text = metaData.profileName
-                self.lbCreationDate.text = UIUtil.sharedInstance.formatDate(metaData.creationDate)
+                self.lbCreationDate.text = UIUtil.sharedInstance.formatDate(date: metaData.creationDate as NSDate?)
                 self.lbVersion.text = metaData.version
                 self.lbType.text = metaData.type
             }
@@ -69,9 +69,9 @@ class ImportProfileViewController : UIViewController {
             let importer = HealthKitProfileImporter(healthStore: healthStore)
             importer.importProfile(
                 importProfile,
-                deleteExistingData: swDeleteExistingData.on,
+                deleteExistingData: swDeleteExistingData.isOn,
                 onProgress: {(message: String, progressInPercent: NSNumber?)->Void in
-                    NSOperationQueue.mainQueue().addOperationWithBlock(){
+                    OperationQueue.main.addOperation(){
                         self.lbImportProgress.text = message
                         if let progress = progressInPercent {
                             self.pvImportProgress.progress = progress.floatValue
@@ -79,8 +79,8 @@ class ImportProfileViewController : UIViewController {
                     }
                 },
                 
-                onCompletion: {(error: ErrorType?)-> Void in
-                    NSOperationQueue.mainQueue().addOperationWithBlock(){
+                onCompletion: {(error: Error?)-> Void in
+                    OperationQueue.main.addOperation(){
                         if let exportError = error {
                             self.lbImportProgress.text = "Import error: \(exportError)"
                             print(exportError)

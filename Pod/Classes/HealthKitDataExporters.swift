@@ -137,7 +137,7 @@ internal class QuantityTypeDataExporter: BaseDataExporter, DataExporter {
             anchor: anchor ,
             limit: queryCountLimit) { (query, results, deleted, newAnchor, error) -> Void in
 
-                self.writeResults(results, exportTargets: exportTargets, error: error as! NSError)
+                self.writeResults(results, exportTargets: exportTargets, error: error as? NSError)
          
                 resultAnchor = newAnchor
                 resultCount = results?.count
@@ -220,7 +220,7 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
             anchor: anchor ,
             limit: queryCountLimit) { (query, results, deleted, newAnchor, error) -> Void in
                 
-                self.writeResults(results as! [HKCategorySample], exportTargets: exportTargets, error: error as! NSError)
+                self.writeResults(results as! [HKCategorySample], exportTargets: exportTargets, error: error as? NSError)
 
                 resultAnchor = newAnchor
                 resultCount = results?.count
@@ -337,7 +337,7 @@ internal class CorrelationTypeDataExporter: BaseDataExporter, DataExporter {
             limit: queryCountLimit) {
                 (query, results, deleted, newAnchor, error) -> Void in
                 
-                self.writeResults(results as! [HKCorrelation], exportTargets: exportTargets, error: error as! NSError)
+                self.writeResults(results as! [HKCorrelation], exportTargets: exportTargets, error: error as? NSError)
                 resultAnchor = newAnchor
                 resultCount = results?.count
                 semaphore.signal()
@@ -431,7 +431,7 @@ internal class WorkoutDataExporter: BaseDataExporter, DataExporter {
         let semaphore = DispatchSemaphore(value: 0)
 
         let query = HKSampleQuery(sampleType: HKObjectType.workoutType(), predicate: exportConfiguration.getPredicate(), limit: Int(HKObjectQueryNoLimit), sortDescriptors: [sortDescriptor]) { (query, results, error) -> Void in
-            self.writeResults(results as! [HKWorkout], exportTargets:exportTargets, error:error as! NSError)
+            self.writeResults(results as! [HKWorkout], exportTargets:exportTargets, error:error as? NSError)
             semaphore.signal()
         }
         

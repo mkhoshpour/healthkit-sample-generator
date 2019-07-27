@@ -18,30 +18,28 @@ class ProfilesTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationItem.leftBarButtonItem = editButtonItem();
+        navigationItem.leftBarButtonItem = editButtonItem;
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        let documentsUrl = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0]
+        let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         profiles = HealthKitProfileReader.readProfilesFromDisk(documentsUrl)
         
         tableView.reloadData()
     }
     
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         // make sure the table view is not in editing mode
-        if tableView.editing {
+        if tableView.isEditing {
             tableView.setEditing(false, animated: true)
         }
     }
-    
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "detailView" {
-            let detailViewController = segue.destinationViewController as! ImportProfileViewController
+            let detailViewController = segue.destination as! ImportProfileViewController
             if let indexPath = tableView.indexPathForSelectedRow {
                  detailViewController.profile = profiles[indexPath.row]
             }
@@ -53,25 +51,24 @@ class ProfilesTableViewController: UITableViewController {
 // TableView DataSource
 extension ProfilesTableViewController {
     
-    override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
     
-    override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return profiles.count
     }
-    
-    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let profile = profiles[indexPath.row]
-        let cell = tableView.dequeueReusableCellWithIdentifier("profileCell")!
+        let cell = tableView.dequeueReusableCell(withIdentifier: "profileCell")!
         
         cell.textLabel?.text = profile.fileName
         
         profile.loadMetaData(true) { (metaData:HealthKitProfileMetaData) in
 
-            NSOperationQueue.mainQueue().addOperationWithBlock(){
+            OperationQueue.main.addOperation(){
                 
-                let from = UIUtil.sharedInstance.formatDate(metaData.creationDate)
+                let from = UIUtil.sharedInstance.formatDate(date: metaData.creationDate as NSDate?)
                 let profileName = metaData.profileName != nil ? metaData.profileName! : "unknown"
                 
                 cell.detailTextLabel?.text = "\(profileName) from: \(from)"
@@ -87,31 +84,30 @@ extension ProfilesTableViewController {
 // UITableViewDelegate
 extension ProfilesTableViewController {
     
-    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if editingStyle == .Delete {
-            
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
             let profile = profiles[indexPath.row]
             
             let alert = UIAlertController(
                             title: "Delete Profile \(profile.fileName)",
                             message: "Do you really want to delete this prolfile? The file will be deleted! This can not be undone!",
-                            preferredStyle: .Alert)
+                            preferredStyle: .alert)
             
-            alert.addAction(UIAlertAction(title: "Yes, delete it!", style: .Destructive, handler: { action in
+            alert.addAction(UIAlertAction(title: "Yes, delete it!", style: .destructive, handler: { action in
                 do {
                     try profile.deleteFile()
-                    self.profiles.removeAtIndex(indexPath.row)
-                    self.tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation:.Automatic)
+                    self.profiles.remove(at: indexPath.row)
+                    self.tableView.deleteRows(at: [indexPath], with:.automatic)
                 } catch let error {
-                    let errorAlert = UIAlertController(title: "Error", message: "\(error)", preferredStyle: .Alert)
-                    errorAlert.addAction(UIAlertAction(title: "Ok", style: .Default, handler: nil))
-                    self.presentViewController(errorAlert, animated: true, completion: nil)
+                    let errorAlert = UIAlertController(title: "Error", message: "\(error)", preferredStyle: .alert)
+                    errorAlert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+                    self.present(errorAlert, animated: true, completion: nil)
                 }
             }))
             
-            alert.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: nil))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
             
-            self.presentViewController(alert, animated: true, completion: nil)
+            self.present(alert, animated: true, completion: nil)
         }
     }
     

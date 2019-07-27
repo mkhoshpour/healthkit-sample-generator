@@ -11,23 +11,23 @@ import UIKit
 
 class UIUtil {
     
-    let formatter = NSDateFormatter()
-    let fileNameFormatter = NSDateFormatter()
+    let formatter = DateFormatter()
+    let fileNameFormatter = DateFormatter()
     
     static let sharedInstance = UIUtil()
     
     private init(){
-        formatter.dateStyle = NSDateFormatterStyle.MediumStyle
-        formatter.timeStyle = NSDateFormatterStyle.MediumStyle
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .medium
         
         fileNameFormatter.dateFormat = "yyyyMMddHHmmss"
     }
     
     func formatDate(date:NSDate?) -> String {
-        return date != nil ? formatter.stringFromDate(date!) : "unknown"
+        return date != nil ? formatter.string(from: date! as Date) : "unknown"
     }
     
     func formatDateForFileName(date:NSDate?) -> String {
-        return date != nil ? fileNameFormatter.stringFromDate(date!) : "unknown"
+        return date != nil ? fileNameFormatter.string(from: date! as Date) : "unknown"
     }
 }
