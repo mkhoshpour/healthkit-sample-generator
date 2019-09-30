@@ -30,8 +30,8 @@ internal extension ExportConfiguration {
     internal func getPredicate() -> NSPredicate? {
         
 //        let predicateNoCorreltion = HKQuery.predicateForObjectsWithNoCorrelation()
-        let predicateNoCorreltion = HKQuery.predicateForSamples(withStart: Date().addingTimeInterval(-60 * 60 * 24),
-                                                                end: Date(),
+        let predicateNoCorreltion = HKQuery.predicateForSamples(withStart: Calendar.current.startOfDay(for: Date().addingTimeInterval(-60 * 60 * 23)),
+                                                                end: Calendar.current.startOfDay(for: Date()),
                                                                 options: .strictEndDate)
         
         switch exportType {
