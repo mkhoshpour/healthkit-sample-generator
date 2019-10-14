@@ -58,8 +58,8 @@ internal class UserDataExporter: BaseDataExporter, DataExporter {
     internal func export(_ healthStore: HKHealthStore, exportTargets: [ExportTarget]) throws {
         var userData = Dictionary<String, AnyObject>()
         
-        if let birthDay = try? healthStore.dateOfBirth() {
-            userData[HealthKitConstants.DATE_OF_BIRTH] = birthDay as AnyObject
+        if let birthDay = try? healthStore.dateOfBirthComponents() {
+            userData[HealthKitConstants.DATE_OF_BIRTH] = birthDay.description as AnyObject
         }
         
         if let sex = try? healthStore.biologicalSex(), sex.biologicalSex != HKBiologicalSex.notSet {
@@ -116,6 +116,9 @@ internal class QuantityTypeDataExporter: BaseDataExporter, DataExporter {
                         
                         if sample.startDate != sample.endDate {
                             dict[HealthKitConstants.E_DATE] = sample.endDate as AnyObject
+                        }
+                        if let context = sample.metadata?[HKMetadataKeyHeartRateMotionContext] as? NSNumber{
+                            dict[HealthKitConstants.META_DATA] = context as AnyObject
                         }
                         try exportTarget.writeDictionary(dict);
                     }

@@ -299,7 +299,7 @@
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
-						DevelopmentTeam = UZ9LW928M3;
+						DevelopmentTeam = 6HLE4997NC;
 						TestTargetID = 607FACCF1AFB9204008FA782;
 					};
 				};
@@ -394,14 +394,10 @@
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-HealthKitSampleGenerator_Tests/Pods-HealthKitSampleGenerator_Tests-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/HealthKitSampleGenerator/HealthKitSampleGenerator.framework",
-				"${BUILT_PRODUCTS_DIR}/Nimble/Nimble.framework",
-				"${BUILT_PRODUCTS_DIR}/Quick/Quick.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/HealthKitSampleGenerator.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Nimble.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Quick.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -591,6 +587,7 @@
 				DEVELOPMENT_TEAM = 6HLE4997NC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = HealthKitSampleGenerator/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				OTHER_LDFLAGS = (
@@ -617,6 +614,7 @@
 				DEVELOPMENT_TEAM = 6HLE4997NC;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = HealthKitSampleGenerator/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
 				OTHER_LDFLAGS = (
@@ -637,7 +635,7 @@
 			baseConfigurationReference = 36C52CD405AB18909D1FB19B /* Pods-HealthKitSampleGenerator_Tests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				DEVELOPMENT_TEAM = UZ9LW928M3;
+				DEVELOPMENT_TEAM = 6HLE4997NC;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -658,7 +656,7 @@
 			baseConfigurationReference = 3F2C1D6A1AC94D0C11E4E0D8 /* Pods-HealthKitSampleGenerator_Tests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				DEVELOPMENT_TEAM = UZ9LW928M3;
+				DEVELOPMENT_TEAM = 6HLE4997NC;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = Tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
