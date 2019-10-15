@@ -8,7 +8,7 @@ s.author           = { "Michael Seemann" => "pods@mseemann.de" }
 s.source           = { :git => "https://github.com/mseemann/healthkit-sample-generator.git", :tag => s.version.to_s }
 
 
-s.platform     = :ios, '9.0'
+s.platform     = :ios, '12.0'
 s.requires_arc = true
 
 s.source_files = 'Pod/Classes/**/*'
