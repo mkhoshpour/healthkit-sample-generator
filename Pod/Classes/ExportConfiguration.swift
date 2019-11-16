@@ -19,6 +19,11 @@ public protocol ExportConfiguration {
     var profileName:String {get}
     /// should uuids be exported or not
     var exportUuids:Bool {get}
+    /// export start date
+    var startDate:Date {get}
+    /// export end date
+    var endDate:Date {get}
+    
 }
 
 // possible configuration extension: 
@@ -30,9 +35,8 @@ internal extension ExportConfiguration {
     internal func getPredicate() -> NSPredicate? {
         
 //        let predicateNoCorreltion = HKQuery.predicateForObjectsWithNoCorrelation()
-        let predicateNoCorreltion = HKQuery.predicateForSamples(withStart: Calendar.current.startOfDay(for: Date().addingTimeInterval(-60 * 60 * 23)),
-                                                                end: Calendar.current.startOfDay(for: Date()),
-                                                                options: .strictEndDate)
+        //let predicateNoCorreltion = HKQuery.predicateForSamples(withStart: Calendar.current.startOfDay(for: Date().addingTimeInterval(-60 * 60 * 23)),end: Calendar.current.startOfDay(for: Date()),options: .strictEndDate)
+        let predicateNoCorreltion = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictEndDate)
         
         switch exportType {
         case .ALL:
@@ -50,6 +54,7 @@ internal extension ExportConfiguration {
     Epxort the whole Data from first Entry up to the current Date. E.g. full means the whole period of time.
 */
 public struct HealthDataFullExportConfiguration : ExportConfiguration {
+    
     /// what should be exported - see HealthDataToExportType
     public var exportType = HealthDataToExportType.ALL // required
     /// the name of the profile
@@ -57,13 +62,19 @@ public struct HealthDataFullExportConfiguration : ExportConfiguration {
     /// should uuids be exported or not
     public var exportUuids = false
     
+    public var startDate: Date // required
+    
+    public var endDate: Date // required
+    
     /**
         instantiate a HealthDataFullExportConfiguration.
         - Parameter profileName: the name of the profile
         - Parameter exportType: what should be exported. see HealthDataToExportType
     */
-    public init(profileName:String, exportType: HealthDataToExportType){
+    public init(profileName:String, exportType: HealthDataToExportType, startDate: Date, endDate: Date){
         self.profileName = profileName
         self.exportType = exportType
+        self.startDate = startDate
+        self.endDate = endDate
     }
 }
