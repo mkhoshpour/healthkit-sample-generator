@@ -120,6 +120,7 @@ internal class QuantityTypeDataExporter: BaseDataExporter, DataExporter {
                         if let context = sample.metadata?[HKMetadataKeyHeartRateMotionContext] as? NSNumber{
                             dict[HealthKitConstants.META_DATA] = context as AnyObject
                         }
+                        dict[HealthKitConstants.SOURCE] = sample.sourceRevision.source.name as AnyObject
                         try exportTarget.writeDictionary(dict);
                     }
                 }
