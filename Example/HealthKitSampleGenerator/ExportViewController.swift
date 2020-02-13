@@ -133,7 +133,7 @@ class ExportViewController : UIViewController, UITextFieldDelegate {
             outputFileName: outputFileName,
             overwriteIfExist: swOverwriteIfExist.isOn)
         
-        exportConfiguration = HealthDataFullExportConfiguration(profileName: tfProfileName.text!, exportType: HealthDataToExportType.allValues[scExportType.selectedSegmentIndex])
+        exportConfiguration = HealthDataFullExportConfiguration(profileName: tfProfileName.text!, exportType: HealthDataToExportType.allValues[scExportType.selectedSegmentIndex], startDate: Date().addingTimeInterval(-3600), endDate: Date())
 
         
         exportConfigurationValid = exportTarget!.isValid()

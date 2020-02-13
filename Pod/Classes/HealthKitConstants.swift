@@ -28,6 +28,7 @@ class HealthKitConstants {
     static let BLOOD_TYPE               = "bloodType"
     static let FITZPATRICK_SKIN_TYPE    = "fitzpatrickSkinType"
     static let META_DATA                = "metaData"
+    static let SOURCE                   = "source"
     static let CREATION_DATE            = "creationDate"
     static let PROFILE_NAME             = "profileName"
     static let VERSION                  = "version"
