@@ -223,7 +223,9 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
             anchor: anchor ,
             limit: queryCountLimit) { (query, results, deleted, newAnchor, error) -> Void in
                 
-                self.writeResults(results as! [HKCategorySample], exportTargets: exportTargets, error: error as? NSError)
+                if let results = results {
+                    self.writeResults(results as! [HKCategorySample], exportTargets: exportTargets, error: error as? NSError)
+                }
 
                 resultAnchor = newAnchor
                 resultCount = results?.count
