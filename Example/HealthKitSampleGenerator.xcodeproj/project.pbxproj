@@ -375,7 +375,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-HealthKitSampleGenerator_Example/Pods-HealthKitSampleGenerator_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/HealthKitSampleGenerator/HealthKitSampleGenerator.framework",
+				"${BUILT_PRODUCTS_DIR}/HealthKitSampleGenerator-iOS12.0/HealthKitSampleGenerator.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
@@ -393,11 +393,15 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-HealthKitSampleGenerator_Tests/Pods-HealthKitSampleGenerator_Tests-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/HealthKitSampleGenerator/HealthKitSampleGenerator.framework",
+				"${BUILT_PRODUCTS_DIR}/HealthKitSampleGenerator-iOS9.0/HealthKitSampleGenerator.framework",
+				"${BUILT_PRODUCTS_DIR}/Nimble/Nimble.framework",
+				"${BUILT_PRODUCTS_DIR}/Quick/Quick.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/HealthKitSampleGenerator.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Nimble.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Quick.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

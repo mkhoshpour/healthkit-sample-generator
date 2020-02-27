@@ -23,6 +23,8 @@ public protocol ExportConfiguration {
     var startDate:Date {get}
     /// export end date
     var endDate:Date {get}
+    /// should authorize HK parameters from user or not
+    var shouldAuthorize:Bool {get}
     
 }
 
@@ -66,15 +68,18 @@ public struct HealthDataFullExportConfiguration : ExportConfiguration {
     
     public var endDate: Date // required
     
+    public var shouldAuthorize: Bool // required
+    
     /**
         instantiate a HealthDataFullExportConfiguration.
         - Parameter profileName: the name of the profile
         - Parameter exportType: what should be exported. see HealthDataToExportType
     */
-    public init(profileName:String, exportType: HealthDataToExportType, startDate: Date, endDate: Date){
+    public init(profileName:String, exportType: HealthDataToExportType, startDate: Date, endDate: Date, shouldAuthorize: Bool){
         self.profileName = profileName
         self.exportType = exportType
         self.startDate = startDate
         self.endDate = endDate
+        self.shouldAuthorize = shouldAuthorize
     }
 }

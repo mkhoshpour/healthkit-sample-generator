@@ -129,34 +129,59 @@ open class HealthKitDataExporter {
                 return
             }
         }
-
+        
+        if(exportConfiguration.shouldAuthorize){
+            healthStore.requestAuthorization(toShare: nil, read: HealthKitConstants.authorizationReadTypes()) {
+                (success, error) -> Void in
+                /// TODO success error handling
+                self.healthStore.preferredUnits(for: HealthKitConstants.healthKitQuantityTypes) {
+                    (typeMap, error) in
+            
+                    let dataExporter : [DataExporter] = self.getDataExporters(exportConfiguration, typeMap: typeMap)
+                            
+                    let exportOperation = ExportOperation(
+                        exportConfiguration: exportConfiguration,
+                        exportTargets: exportTargets,
+                        healthStore: self.healthStore,
+                        dataExporter: dataExporter,
+                        onProgress: onProgress,
+                        onError: {(err:Error?) -> Void in
+                            onCompletion(err)
+                        },
+                        completionBlock:{
+                            onCompletion(nil)
+                        }
+                    )
+                    
+                    self.exportQueue.addOperation(exportOperation)
+                }
+            }
+        }else{
+            self.healthStore.preferredUnits(for: HealthKitConstants.healthKitQuantityTypes) {
+                    (typeMap, error) in
+            
+                    let dataExporter : [DataExporter] = self.getDataExporters(exportConfiguration, typeMap: typeMap)
+                            
+                    let exportOperation = ExportOperation(
+                        exportConfiguration: exportConfiguration,
+                        exportTargets: exportTargets,
+                        healthStore: self.healthStore,
+                        dataExporter: dataExporter,
+                        onProgress: onProgress,
+                        onError: {(err:Error?) -> Void in
+                            onCompletion(err)
+                        },
+                        completionBlock:{
+                            onCompletion(nil)
+                        }
+                    )
+                    
+                    self.exportQueue.addOperation(exportOperation)
+                }
+        }
 
  
-        healthStore.requestAuthorization(toShare: nil, read: HealthKitConstants.authorizationReadTypes()) {
-            (success, error) -> Void in
-            /// TODO success error handling
-            self.healthStore.preferredUnits(for: HealthKitConstants.healthKitQuantityTypes) {
-                (typeMap, error) in
         
-                let dataExporter : [DataExporter] = self.getDataExporters(exportConfiguration, typeMap: typeMap)
-                        
-                let exportOperation = ExportOperation(
-                    exportConfiguration: exportConfiguration,
-                    exportTargets: exportTargets,
-                    healthStore: self.healthStore,
-                    dataExporter: dataExporter,
-                    onProgress: onProgress,
-                    onError: {(err:Error?) -> Void in
-                        onCompletion(err)
-                    },
-                    completionBlock:{
-                        onCompletion(nil)
-                    }
-                )
-                
-                self.exportQueue.addOperation(exportOperation)
-            }
-        }
         
     }
     
