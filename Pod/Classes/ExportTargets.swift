@@ -92,8 +92,8 @@ open class JsonSingleDocAsFileExportTarget : JsonSingleDocExportTarget, ExportTa
     fileprivate(set) var overwriteIfExist = false
     
     /**
-        Instantiate a JsonSingleDocAsFileExportTarget. 
-        - Parameter outputFileName: the full path of the output file 
+        Instantiate a JsonSingleDocAsFileExportTarget.
+        - Parameter outputFileName: the full path of the output file
         - Parameter overwriteIfExist: should the file be overwritten if it already exist.
     */
     public init(outputFileName: String, overwriteIfExist:Bool){

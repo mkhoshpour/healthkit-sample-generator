@@ -187,12 +187,12 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
         super.init(exportConfiguration: exportConfiguration)
     }
     
-    func writeResults(_ results: [HKCategorySample], exportTargets: [ExportTarget], error: NSError?) -> Void {
+    func writeResults(_ results: [HKCategorySample]?, exportTargets: [ExportTarget], error: NSError?) -> Void {
         if error != nil {
             self.healthQueryError = error
         } else {
             do {
-                for sample in results {
+                for sample in results ?? [HKCategorySample]() {
                     
                     for exportTarget in exportTargets {
                         var dict: Dictionary<String, AnyObject> = [:]
@@ -223,14 +223,26 @@ internal class CategoryTypeDataExporter: BaseDataExporter, DataExporter {
             predicate: exportConfiguration.getPredicate(),
             anchor: anchor ,
             limit: queryCountLimit) { (query, results, deleted, newAnchor, error) -> Void in
-                
-                if let results = results {
-                    self.writeResults(results as! [HKCategorySample], exportTargets: exportTargets, error: error as? NSError)
-                }
+            
+                if(error != nil){
+                    if (error as! NSError).code == 5 {
+                        self.writeResults(results as? [HKCategorySample], exportTargets: exportTargets, error: nil)
+                        resultAnchor = newAnchor
+                        resultCount = results?.count ?? 0
+                        semaphore.signal()
+                    }else{
+                        self.writeResults(results as? [HKCategorySample], exportTargets: exportTargets, error: error as? NSError)
+                        resultAnchor = newAnchor
+                        resultCount = results?.count ?? 0
+                        semaphore.signal()
+                    }
+                }else{
+                    self.writeResults(results as? [HKCategorySample], exportTargets: exportTargets, error: nil)
 
-                resultAnchor = newAnchor
-                resultCount = results?.count
-                semaphore.signal()
+                    resultAnchor = newAnchor
+                    resultCount = results?.count ?? 0
+                    semaphore.signal()
+                }
             }
         
         healthStore.execute(query)
@@ -437,8 +449,19 @@ internal class WorkoutDataExporter: BaseDataExporter, DataExporter {
         let semaphore = DispatchSemaphore(value: 0)
 
         let query = HKSampleQuery(sampleType: HKObjectType.workoutType(), predicate: exportConfiguration.getPredicate(), limit: Int(HKObjectQueryNoLimit), sortDescriptors: [sortDescriptor]) { (query, results, error) -> Void in
-            self.writeResults(results as! [HKWorkout], exportTargets:exportTargets, error:error as? NSError)
-            semaphore.signal()
+            if(error != nil){
+                if (error! as NSError).code == 5 {
+                    self.writeResults([HKWorkout](), exportTargets:exportTargets, error:nil)
+                    semaphore.signal()
+                }else{
+                    self.writeResults([HKWorkout](), exportTargets:exportTargets, error:error as NSError?)
+                    semaphore.signal()
+                }
+            }else{
+                self.writeResults(results as! [HKWorkout], exportTargets:exportTargets, error:error as NSError?)
+                semaphore.signal()
+            }
+  
         }
         
         healthStore.execute(query)

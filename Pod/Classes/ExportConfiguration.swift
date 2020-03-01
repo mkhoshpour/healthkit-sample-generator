@@ -28,7 +28,7 @@ public protocol ExportConfiguration {
     
 }
 
-// possible configuration extension: 
+// possible configuration extension:
 // export correlations even if they are present in the correlation type section
 // export endDate always - even if the endDate and startDate are the same
 

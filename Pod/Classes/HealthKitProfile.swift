@@ -52,7 +52,7 @@ open class HealthKitProfile : CustomStringConvertible {
     }
     
     /**
-     Load the MetaData of a profile. If the metadata have been readed the reading is 
+     Load the MetaData of a profile. If the metadata have been readed the reading is
      interrupted - by this way also very large files are supported to.
      - Returns: the HealthKitProfileMetaData that were read from the profile.
     */

@@ -157,9 +157,17 @@ open class HealthKitDataExporter {
                 }
             }
         }else{
-            self.healthStore.preferredUnits(for: HealthKitConstants.healthKitQuantityTypes) {
-                    (typeMap, error) in
             
+            var autorizedTypeMap = [HKQuantityType]()
+            for type in HealthKitConstants.healthKitQuantityTypes{
+                if self.healthStore.authorizationStatus(for: type) == .sharingAuthorized {
+                    autorizedTypeMap.append(type)
+                }
+            }
+            
+            self.healthStore.preferredUnits(for: Set(autorizedTypeMap.map({$0}))) {
+                    (typeMap, error) in
+               
                     let dataExporter : [DataExporter] = self.getDataExporters(exportConfiguration, typeMap: typeMap)
                             
                     let exportOperation = ExportOperation(
