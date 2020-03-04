@@ -160,13 +160,15 @@ open class HealthKitDataExporter {
             
             var autorizedTypeMap = [HKQuantityType]()
             for type in HealthKitConstants.healthKitQuantityTypes{
-                if self.healthStore.authorizationStatus(for: type) == .sharingAuthorized {
+//                if self.healthStore.authorizationStatus(for: type) == .sharingAuthorized {
                     autorizedTypeMap.append(type)
-                }
+//                }
             }
             
-            self.healthStore.preferredUnits(for: Set(autorizedTypeMap.map({$0}))) {
-                    (typeMap, error) in
+            let typeMap : [HKQuantityType:HKUnit] = [HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyTemperature)! : HKUnit(from: "degC"),
+                HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)! : HKUnit(from: "count"),
+            HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.distanceWalkingRunning)! : HKUnit(from: "km"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.basalEnergyBurned)! : HKUnit(from: "kcal"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.height)! : HKUnit(from: "m"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.heartRate)! : HKUnit(from: "count/min"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bloodGlucose)! : HKUnit(from: "mg/dL"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.walkingHeartRateAverage)! : HKUnit(from: "count/min"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bloodPressureSystolic)! : HKUnit(from: "mmHg"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.restingHeartRate)! : HKUnit(from: "count/min"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bloodPressureDiastolic)! : HKUnit(from: "mmHg"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.oxygenSaturation)! : HKUnit(from: "%"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.numberOfTimesFallen)! : HKUnit(from: "count"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.heartRateVariabilitySDNN)! : HKUnit(from: "ms"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.activeEnergyBurned)! : HKUnit(from: "kcal"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.flightsClimbed)! : HKUnit(from: "count"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)! : HKUnit(from: "kg"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyFatPercentage)! : HKUnit(from: "%"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.peripheralPerfusionIndex)! : HKUnit(from: "%"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.peakExpiratoryFlowRate)! : HKUnit(from: "L/min"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.respiratoryRate)! : HKUnit(from: "count/min"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.inhalerUsage)! : HKUnit(from: "count"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.forcedExpiratoryVolume1)! : HKUnit(from: "L"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMassIndex)! : HKUnit(from: "count"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.leanBodyMass)! : HKUnit(from: "kg"),HKObjectType.quantityType(forIdentifier: HKQuantityTypeIdentifier.basalBodyTemperature)! : HKUnit(from: "degC")]
+            
                
                     let dataExporter : [DataExporter] = self.getDataExporters(exportConfiguration, typeMap: typeMap)
                             
@@ -185,7 +187,7 @@ open class HealthKitDataExporter {
                     )
                     
                     self.exportQueue.addOperation(exportOperation)
-                }
+//                }
         }
 
  
