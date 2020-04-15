@@ -46,21 +46,23 @@ import HealthKitSampleGenerator
 
 
 // setup an output file name
-let fm              = NSFileManager.defaultManager()
-let documentsUrl    = fm.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)[0]
-let outputFileName  = documentsUrl.URLByAppendingPathComponent("export.json").path!
 
-// create a target for the export - all goes in a single json file
-let target          = JsonSingleDocAsFileExportTarget(outputFileName: outputFileName, overwriteIfExist:true)
-
-// configure the export
-var configuration   = HealthDataFullExportConfiguration(profileName: "Profilname", exportType: HealthDataToExportType.ALL)
-configuration.exportUuids = false //false is default - if true, all uuids will be exported too
-
-// create your instance of HKHeakthStore
-let healthStore     = HKHealthStore()
-// and pass it to the HealthKitDataExporter
-let exporter        = HealthKitDataExporter(healthStore: healthStore)
+let startDate = Date.distantPast // export start date
+let endDate = Date()  // export end date
+let fm              = FileManager.default
+let documentsUrl    = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+let outputFileName  = documentsUrl.appendingPathComponent(String(format:"HKexport from %@ to %@.json", startDate.debugDescription ,endDate.debugDescription)).path
+ 
+ // create a target for the export - all goes in a single json file
+ let target          = JsonSingleDocAsFileExportTarget(outputFileName: outputFileName, overwriteIfExist:true)
+ 
+ // configure the export
+ var configuration   = HealthDataFullExportConfiguration(profileName: "Profilname", exportType: HealthDataToExportType.ALL, startDate: startDate, endDate: endDate, shouldAuthorize: false) // if you have authorized using HealthKit in your app before, shouldAuthorize: must be false, otherwise true
+ configuration.exportUuids = false //false is default - if true, all uuids will be exported too
+ // create your instance of HKHeakthStore
+ let healthStore     = HKHealthStore()
+ // and pass it to the HealthKitDataExporter
+ let exporter  = HealthKitDataExporter(healthStore: HealthMonitor().healthStore)
 
 // now start the import.
 exporter.export(
@@ -73,7 +75,7 @@ exporter.export(
         (message: String, progressInPercent: NSNumber?) -> Void in
         // output progress messages
         dispatch_async(dispatch_get_main_queue(), {
-            print(message)
+            print(message + " progress : " + String(Float(progressInPercent ?? -1)))
         })
     },
 
@@ -192,7 +194,8 @@ Some notes about the export/import format:
 
 ## Requirements
 
-iOS 9.0, Xcode 7
+iOS 12.0, Xcode 9, Swift 5
+
 
 ## Installation
 
@@ -206,6 +209,7 @@ pod "HealthKitSampleGenerator"
 ## Author
 
 Michael Seemann, pods@mseemann.de
+Majid Khoshpour, mkhoshpour@yahoo.com
 
 ## License
 
