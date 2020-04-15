@@ -74,9 +74,7 @@ exporter.export(
     onProgress: {
         (message: String, progressInPercent: NSNumber?) -> Void in
         // output progress messages
-        dispatch_async(dispatch_get_main_queue(), {
-            print(message + " progress : " + String(Float(progressInPercent ?? -1)))
-        })
+        print(message + " progress : " + String(Float(progressInPercent ?? -1)))
     },
 
     onCompletion: {
