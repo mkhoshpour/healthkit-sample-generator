@@ -19,7 +19,9 @@ Next Steps:
 * Generator for HealthKit Data
 
 ## Export/Import HealthKit Data
-###The Example-App
+
+### The Example-App
+
 Just build and run the App. Tap on the button "Export HealthKit Data". This will create a JSON file in the App documents folder. If you are
 using the simulator you may access the export file on your mac - the path to the file is visibe in the UI of the App. To access the exported
 data on a real device you need to open iTunes, go to the device App section and have a look at the shared documents section. From there you
